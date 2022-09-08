@@ -33,7 +33,7 @@ public class Flyers
 
     [FunctionName("Flyers")]
     public async Task Run(
-        [TimerTrigger("0 */15 * * * *", RunOnStartup = true)] TimerInfo flyerTimer,
+        [TimerTrigger("0 */15 * * * *", RunOnStartup = false)] TimerInfo flyerTimer,
         ILogger log)
     {
         var poolsConvex = await ConvexPoolContext

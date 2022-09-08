@@ -31,7 +31,7 @@ public class Dashboards
 
     [FunctionName("Dashboards")]
     public async Task Run(
-        [TimerTrigger("0 */15 * * * *", RunOnStartup = true)] TimerInfo dashboardsTimer,
+        [TimerTrigger("0 */15 * * * *", RunOnStartup = false)] TimerInfo dashboardsTimer,
         ILogger log)
     {
         // Get Votium data.

@@ -20,7 +20,7 @@ public class ConvexPools
 
     [FunctionName("ConvexPools")]
     public async Task Run(
-        [TimerTrigger("0 0 */12 * * *", RunOnStartup = true)] TimerInfo convexPoolsTimer,
+        [TimerTrigger("0 0 */12 * * *", RunOnStartup = false)] TimerInfo convexPoolsTimer,
         ILogger log)
     {
         var poolsConvex = await Jobs.Jobs.ConvexPools.UpdateConvexPools(log, PoolContext);

@@ -28,7 +28,7 @@ public class Bribes
 
     [FunctionName("Bribes")]
     public async Task Run(
-        [TimerTrigger("0 */15 * * * *", RunOnStartup = true)] TimerInfo bribeTimer,
+        [TimerTrigger("0 */15 * * * *", RunOnStartup = false)] TimerInfo bribeTimer,
         ILogger log)
     {
         var lastEpochOnly = Config.GetValue<bool>("LastEpochOnly");

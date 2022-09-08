@@ -28,7 +28,7 @@ public class CurvePools
 
     [FunctionName("CurvePools")]
     public async Task Run(
-        [TimerTrigger("0 0 */12 * * *", RunOnStartup = true)] TimerInfo curvePoolsTimer,
+        [TimerTrigger("0 0 */12 * * *", RunOnStartup = false)] TimerInfo curvePoolsTimer,
         ILogger log)
     {
         var poolsCurve = await Jobs.Jobs.CurvePools.UpdateCurvePools(log, CurvePoolContext);
