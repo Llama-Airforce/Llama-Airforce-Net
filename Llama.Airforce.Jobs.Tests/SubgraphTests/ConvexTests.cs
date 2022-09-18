@@ -32,6 +32,5 @@ public class ConvexTests
 
         // Assert
         Assert.IsTrue(data.Count > 20);
-        Assert.IsTrue(data.All(x => x.Tvl > 0));
     }
 }
