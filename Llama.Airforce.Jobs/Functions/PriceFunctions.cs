@@ -33,6 +33,7 @@ public static class PriceFunctions
             string token) => token switch
         {
             "USDM" => SomeAsync(1.0),
+            "BB-A-USD" => SomeAsync(1.0),
             "T" => web3.Match(w => GetCurveV2Price(w, Addresses.ERC20.T).ToOption(), () => None),
             _ => None
         });
