@@ -7,6 +7,7 @@ using Llama.Airforce.Jobs.Factories;
 using Llama.Airforce.Jobs.Functions;
 using Llama.Airforce.Jobs.Snapshots.Models;
 using Llama.Airforce.SeedWork.Types;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nethereum.Web3;
 using NUnit.Framework;
@@ -16,6 +17,17 @@ namespace Llama.Airforce.Jobs.Tests.FactoryTests;
 
 public class BribeFactoryTests
 {
+    private readonly IConfiguration Configuration;
+
+    public BribeFactoryTests()
+    {
+        var builder = new ConfigurationBuilder()
+            .AddUserSecrets<BribeFactoryTests>()
+            .AddEnvironmentVariables();
+
+        Configuration = builder.Build();
+    }
+
     [Test]
     [TestCase(Platform.Votium, Protocol.ConvexCrv, 275218.498948121, 4073133.7953767194)]
     [TestCase(Platform.HiddenHand, Protocol.AuraBal, 5111.9299885981391, 326374.53677203262)]
@@ -26,7 +38,8 @@ public class BribeFactoryTests
         double bribed)
     {
         // Arrange
-        var web3 = new Web3(Constants.ALCHEMY);
+        var alchemy = Configuration["ALCHEMY"];
+        var web3 = new Web3(alchemy);
         var logger = new LoggerFactory().CreateLogger("test");
         var getPrice = fun((Proposal proposal, Address tokenAddress, string token) =>
         {

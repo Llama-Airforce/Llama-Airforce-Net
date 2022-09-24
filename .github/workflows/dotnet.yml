@@ -25,4 +25,5 @@ jobs:
     - name: Test
       env:
         GRAPH_CONVEX: ${{ secrets.GRAPH_CONVEX }}
+        ALCHEMY: ${{ secrets.ALCHEMY }}
       run: dotnet test --no-build --verbosity normal

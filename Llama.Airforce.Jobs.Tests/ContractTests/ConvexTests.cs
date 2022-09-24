@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Llama.Airforce.Jobs.Contracts;
+using Microsoft.Extensions.Configuration;
 using Nethereum.Web3;
 using NUnit.Framework;
 
@@ -7,11 +8,23 @@ namespace Llama.Airforce.Jobs.Tests.ContractTests;
 
 public class ConvexTests
 {
+    private readonly IConfiguration Configuration;
+
+    public ConvexTests()
+    {
+        var builder = new ConfigurationBuilder()
+            .AddUserSecrets<ConvexTests>()
+            .AddEnvironmentVariables();
+
+        Configuration = builder.Build();
+    }
+
     [Test]
     public async Task GetBoostedSupply()
     {
         // Arrange
-        var web3 = new Web3(Constants.ALCHEMY);
+        var alchemy = Configuration["ALCHEMY"];
+        var web3 = new Web3(alchemy);
 
         // Act
         var boostedSupply = await Convex.GetBoostedSupply(web3);
@@ -23,7 +36,8 @@ public class ConvexTests
     public async Task GetCvxLockedupply()
     {
         // Arrange
-        var web3 = new Web3(Constants.ALCHEMY);
+        var alchemy = Configuration["ALCHEMY"];
+        var web3 = new Web3(alchemy);
 
         // Act
         var cvxLocked = await Convex.GetCvxLocked(web3);
@@ -35,7 +49,8 @@ public class ConvexTests
     public async Task GetRewardRate()
     {
         // Arrange
-        var web3 = new Web3(Constants.ALCHEMY);
+        var alchemy = Configuration["ALCHEMY"];
+        var web3 = new Web3(alchemy);
 
         // Act
         var rewardData = await Convex.GetRewardRate(web3);
@@ -47,7 +62,8 @@ public class ConvexTests
     public async Task GetLockedApr()
     {
         // Arrange
-        var web3 = new Web3(Constants.ALCHEMY);
+        var alchemy = Configuration["ALCHEMY"];
+        var web3 = new Web3(alchemy);
 
         // Act
         var apr = Convex.GetLockedApr(web3);
@@ -60,7 +76,8 @@ public class ConvexTests
     public async Task GetCvxCrvApr()
     {
         // Arrange
-        var web3 = new Web3(Constants.ALCHEMY);
+        var alchemy = Configuration["ALCHEMY"];
+        var web3 = new Web3(alchemy);
 
         // Act
         var apr = Convex.GetCvxCrvApr(web3);
@@ -73,7 +90,8 @@ public class ConvexTests
     public async Task GetLockedCrv()
     {
         // Arrange
-        var web3 = new Web3(Constants.ALCHEMY);
+        var alchemy = Configuration["ALCHEMY"];
+        var web3 = new Web3(alchemy);
 
         // Act
         var lockedCrv = Convex.GetLockedCrvUsd(web3);

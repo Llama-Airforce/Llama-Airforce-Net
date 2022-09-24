@@ -11,8 +11,6 @@ public class ConvexTests
 
     public ConvexTests()
     {
-        // the type specified here is just so the secrets library can 
-        // find the UserSecretId we added in the csproj file
         var builder = new ConfigurationBuilder()
             .AddUserSecrets<ConvexTests>()
             .AddEnvironmentVariables();

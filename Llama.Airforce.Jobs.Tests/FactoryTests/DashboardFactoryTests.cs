@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using LanguageExt;
 using Llama.Airforce.Database.Models.Bribes;
 using Llama.Airforce.Jobs.Factories;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nethereum.Web3;
 using NUnit.Framework;
@@ -11,11 +12,23 @@ namespace Llama.Airforce.Jobs.Tests.FactoryTests;
 
 public class DashboardFactoryTests
 {
+    private readonly IConfiguration Configuration;
+
+    public DashboardFactoryTests()
+    {
+        var builder = new ConfigurationBuilder()
+            .AddUserSecrets<DashboardFactoryTests>()
+            .AddEnvironmentVariables();
+
+        Configuration = builder.Build();
+    }
+
     [Test]
     public async Task CreateVotiumOverview()
     {
         // Arrange
-        var web3 = new Web3(Constants.ALCHEMY);
+        var alchemy = Configuration["ALCHEMY"];
+        var web3 = new Web3(alchemy);
         var logger = new LoggerFactory().CreateLogger("test");
         var epochs = Lst<Epoch>.Empty;
         var latestFinishedEpoch = new Epoch

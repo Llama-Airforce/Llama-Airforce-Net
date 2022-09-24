@@ -2,6 +2,7 @@
 using LanguageExt.UnsafeValueAccess;
 using Llama.Airforce.Jobs.Contracts;
 using Llama.Airforce.SeedWork.Types;
+using Microsoft.Extensions.Configuration;
 using Nethereum.Web3;
 using NUnit.Framework;
 
@@ -9,11 +10,23 @@ namespace Llama.Airforce.Jobs.Tests.ContractTests;
 
 public class ERC20Tests
 {
+    private readonly IConfiguration Configuration;
+
+    public ERC20Tests()
+    {
+        var builder = new ConfigurationBuilder()
+            .AddUserSecrets<ERC20Tests>()
+            .AddEnvironmentVariables();
+
+        Configuration = builder.Build();
+    }
+
     [Test]
     public async Task GetSymbol()
     {
         // Arrange
-        var web3 = new Web3(Constants.ALCHEMY);
+        var alchemy = Configuration["ALCHEMY"];
+        var web3 = new Web3(alchemy);
 
         // Act
         var symbol = await ERC20.GetSymbol(web3, Address.Of("0xBC6DA0FE9aD5f3b0d58160288917AA56653660E9").ValueUnsafe());
@@ -26,7 +39,8 @@ public class ERC20Tests
     public async Task GetTotalSupply()
     {
         // Arrange
-        var web3 = new Web3(Constants.ALCHEMY);
+        var alchemy = Configuration["ALCHEMY"];
+        var web3 = new Web3(alchemy);
 
         // Act
         var totalSupply = await ERC20.GetTotalSupply(web3, Addresses.Convex.Token);
@@ -38,7 +52,8 @@ public class ERC20Tests
     public async Task GetDecimals()
     {
         // Arrange
-        var web3 = new Web3(Constants.ALCHEMY);
+        var alchemy = Configuration["ALCHEMY"];
+        var web3 = new Web3(alchemy);
 
         // Act
         var decimals = await ERC20.GetDecimals(web3, Addresses.Convex.Token);
@@ -50,7 +65,8 @@ public class ERC20Tests
     public async Task GetBalanceOf()
     {
         // Arrange
-        var web3 = new Web3(Constants.ALCHEMY);
+        var alchemy = Configuration["ALCHEMY"];
+        var web3 = new Web3(alchemy);
 
         // Act
         var balanceOf = await ERC20.GetBalanceOf(
