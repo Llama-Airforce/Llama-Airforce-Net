@@ -10,6 +10,7 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    environment: Testing
 
     steps:
     - uses: actions/checkout@v3
@@ -22,4 +23,6 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
     - name: Test
+      env:
+        GRAPH_CONVEX: ${{ secrets.GRAPH_CONVEX }}
       run: dotnet test --no-build --verbosity normal

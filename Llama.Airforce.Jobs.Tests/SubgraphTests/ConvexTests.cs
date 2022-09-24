@@ -1,18 +1,33 @@
 ﻿using System.Threading.Tasks;
 using Llama.Airforce.Jobs.Subgraphs;
+using Microsoft.Extensions.Configuration;
 using NUnit.Framework;
 
 namespace Llama.Airforce.Jobs.Tests.SubgraphTests;
 
 public class ConvexTests
 {
+    private readonly IConfiguration Configuration;
+
+    public ConvexTests()
+    {
+        // the type specified here is just so the secrets library can 
+        // find the UserSecretId we added in the csproj file
+        var builder = new ConfigurationBuilder()
+            .AddUserSecrets<ConvexTests>()
+            .AddEnvironmentVariables();
+
+        Configuration = builder.Build();
+    }
+
     [Test]
     public async Task GetPools()
     {
         // Arrange
+        var graphUrl = Configuration["GRAPH_CONVEX"];
 
         // Act
-        var data = await Convex.GetPools()
+        var data = await Convex.GetPools(graphUrl)
             .MatchAsync(x => x, _ => throw new System.Exception());
 
         // Assert
@@ -25,9 +40,10 @@ public class ConvexTests
     public async Task GetSnapshots()
     {
         // Arrange
+        var graphUrl = Configuration["GRAPH_CONVEX"];
 
         // Act
-        var data = await Convex.GetDailySnapshots("seth")
+        var data = await Convex.GetDailySnapshots(graphUrl, "seth")
             .MatchAsync(x => x, _ => throw new System.Exception());
 
         // Assert
