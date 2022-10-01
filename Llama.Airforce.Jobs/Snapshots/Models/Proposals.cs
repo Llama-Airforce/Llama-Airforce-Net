@@ -33,4 +33,7 @@ public class Proposal
 
     [JsonProperty("snapshot")]
     public string Snapshot { get; set; }
+
+    [JsonProperty("scores_total")]
+    public double ScoresTotal { get; set; }
 }

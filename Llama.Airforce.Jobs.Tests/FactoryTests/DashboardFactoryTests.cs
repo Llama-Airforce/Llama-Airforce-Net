@@ -34,7 +34,8 @@ public class DashboardFactoryTests
         var latestFinishedEpoch = new Epoch
         {
             Bribes = new List<Bribe> { new() { Amount = 0.44}},
-            Bribed = new Dictionary<string, double> { { "foo", 1 } }
+            Bribed = new Dictionary<string, double> { { "foo", 1 } },
+            ScoresTotal = 1
         };
 
         var data = new DashboardFactory.VotiumData(
@@ -47,5 +48,31 @@ public class DashboardFactoryTests
 
         // Assert
         Assert.IsTrue(overview.RewardPerDollarBribe > 0);
+    }
+
+    [Test]
+    public async Task CreateVotiumOverview_FailsWithZeroScoresTotal()
+    {
+        // Arrange
+        var alchemy = Configuration["ALCHEMY"];
+        var web3 = new Web3(alchemy);
+        var logger = new LoggerFactory().CreateLogger("test");
+        var epochs = Lst<Epoch>.Empty;
+        var latestFinishedEpoch = new Epoch
+        {
+            Bribes = new List<Bribe> { new() { Amount = 0.44 } },
+            Bribed = new Dictionary<string, double> { { "foo", 1 } },
+            ScoresTotal = 0
+        };
+
+        var data = new DashboardFactory.VotiumData(
+            epochs,
+            latestFinishedEpoch);
+
+        // Act
+        var overview = await DashboardFactory.CreateOverviewVotium(logger, web3, data);
+
+        // Assert
+        Assert.IsTrue(overview.IsLeft && overview.LeftToList().First().Message == "Total scores is zero");
     }
 }

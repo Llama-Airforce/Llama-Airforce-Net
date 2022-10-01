@@ -29,13 +29,14 @@ public class BribeFactoryTests
     }
 
     [Test]
-    [TestCase(Platform.Votium, Protocol.ConvexCrv, 275218.498948121, 4073133.7953767194)]
-    [TestCase(Platform.HiddenHand, Protocol.AuraBal, 5111.9299885981391, 326374.53677203262)]
+    [TestCase(Platform.Votium, Protocol.ConvexCrv, 275218.498948121, 4073133.7953767194, 7405670.9515354205)]
+    [TestCase(Platform.HiddenHand, Protocol.AuraBal, 5111.9299885981391, 326374.53677203262, 757590.84303675336)]
     public async Task ProcessEpoch(
         Platform platform,
         Protocol protocol,
         double bribes,
-        double bribed)
+        double bribed,
+        double scoresTotal)
     {
         // Arrange
         var alchemy = Configuration["ALCHEMY"];
@@ -83,5 +84,6 @@ public class BribeFactoryTests
         // Assert
         Assert.AreEqual(bribes, dbEpoch.Bribes.Sum(bribe => bribe.AmountDollars));
         Assert.AreEqual(bribed, dbEpoch.Bribed.Sum(x => x.Value));
+        Assert.AreEqual(scoresTotal, dbEpoch.ScoresTotal);
     }
 }

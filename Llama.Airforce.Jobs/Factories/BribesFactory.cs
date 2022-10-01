@@ -243,7 +243,8 @@ public static class BribesFactory
                        End = proposal.End,
                        Proposal = proposal.Id,
                        Bribed = votesPools.ToDictionary(),
-                       Bribes = bribes.ToList()
+                       Bribes = bribes.ToList(),
+                       ScoresTotal = proposal.ScoresTotal
                    };
         });
 

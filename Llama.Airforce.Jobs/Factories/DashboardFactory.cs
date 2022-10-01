@@ -74,15 +74,16 @@ public static class DashboardFactory
             var crvPerDay_ = Curve.GetRate(web3).DivideByDecimals(Convex.CurveDecimals).Map(x => x * 86400).ToEitherAsync();
             var votingPower_ = Curve.GetVotingPower(web3, Addresses.Convex.VoterProxy).ToEitherAsync();
 
-            // Total supply is all CVX locked eligible for voting.
-            var lockedSupply_ = ERC20.GetLockedSupply(web3, Addresses.Convex.Locked2).DivideByDecimals(Convex.CvxDecimals).ToEitherAsync();
+            var scoresTotal_ = data.LatestFinishedEpoch.ScoresTotal > 0
+                ? RightAsync<Error, double>(data.LatestFinishedEpoch.ScoresTotal)
+                : LeftAsync<Error, double>(Error.New("Total scores is zero"));
 
             // https://docs.google.com/spreadsheets/d/1SCO33fU-4EglqD9h191c5z3curC3SqJP-yshA1MjVqE/edit#gid=0
             var crvPerCvxPerRound_ =
                 from crvPerDay in crvPerDay_
                 from votingPower in votingPower_
-                from lockedSupply in lockedSupply_
-                select crvPerDay * 14 * votingPower / (lockedSupply);
+                from scoresTotal in scoresTotal_
+                select crvPerDay * 14 * votingPower / scoresTotal;
 
             var rewardPerDollarBribe_ =
                 from crvPrice in crvPrice_
@@ -144,15 +145,16 @@ public static class DashboardFactory
             var balPerDay_ = Balancer.GetRate(web3).DivideByDecimals(Aura.BalancerDecimals).Map(x => x * 86400).ToEitherAsync();
             var votingPower_ = Balancer.GetVotingPower(web3, Addresses.Aura.VoterProxy).ToEitherAsync();
 
-            // Total supply is all CVX locked eligible for voting.
-            var lockedSupply_ = ERC20.GetLockedSupply(web3, Addresses.Aura.Locked).DivideByDecimals(Aura.AuraDecimals).ToEitherAsync();
+            var scoresTotal_ = data.LatestFinishedEpoch.ScoresTotal > 0
+                ? RightAsync<Error, double>(data.LatestFinishedEpoch.ScoresTotal)
+                : LeftAsync<Error, double>(Error.New("Total scores is zero"));
 
             // https://docs.google.com/spreadsheets/d/1SCO33fU-4EglqD9h191c5z3curC3SqJP-yshA1MjVqE/edit#gid=0
             var balPerAuraPerRound_ =
                 from balPerDay in balPerDay_
                 from votingPower in votingPower_
-                from lockedSupply in lockedSupply_
-                select balPerDay * 14 * votingPower / lockedSupply;
+                from scoresTotal in scoresTotal_
+                select balPerDay * 14 * votingPower / scoresTotal;
 
             var rewardPerDollarBribe_ =
                 from balPrice in balPrice_

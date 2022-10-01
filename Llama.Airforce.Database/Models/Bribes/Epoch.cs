@@ -25,6 +25,9 @@ public class Epoch
     [JsonProperty("end")]
     public long End { get; set; }
 
+    [JsonProperty("scoresTotal")]
+    public double ScoresTotal { get; set; }
+
     [JsonProperty("bribed")]
     public IReadOnlyDictionary<string, double> Bribed { get; set; }
 

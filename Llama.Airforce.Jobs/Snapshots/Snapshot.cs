@@ -85,6 +85,7 @@ proposals(
     start
     end
     snapshot
+    scores_total
 }} }}";
 
             return GetData(SNAPSHOT_URL, query)
