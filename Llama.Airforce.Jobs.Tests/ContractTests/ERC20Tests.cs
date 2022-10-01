@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using LanguageExt.UnsafeValueAccess;
 using Llama.Airforce.Jobs.Contracts;
 using Llama.Airforce.SeedWork.Types;
 using Microsoft.Extensions.Configuration;
@@ -29,7 +28,7 @@ public class ERC20Tests
         var web3 = new Web3(alchemy);
 
         // Act
-        var symbol = await ERC20.GetSymbol(web3, Address.Of("0xBC6DA0FE9aD5f3b0d58160288917AA56653660E9").ValueUnsafe());
+        var symbol = await ERC20.GetSymbol(web3, Address.Of("0xBC6DA0FE9aD5f3b0d58160288917AA56653660E9"));
 
         // Assert
         Assert.AreEqual("alUSD", symbol);

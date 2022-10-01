@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using LanguageExt.UnsafeValueAccess;
 using Llama.Airforce.SeedWork;
 using Llama.Airforce.SeedWork.Types;
 using Newtonsoft.Json;
@@ -59,8 +58,8 @@ public class EpochId : ValueObject
             round);
 
     public static implicit operator EpochId(Epoch epoch) => new(
-        StringMax.Of(epoch.Platform).ValueUnsafe(),
-        StringMax.Of(epoch.Protocol).ValueUnsafe(),
+        StringMax.Of(epoch.Platform),
+        StringMax.Of(epoch.Protocol),
         epoch.Round);
 
     public static implicit operator string(EpochId epochId) => epochId.ToString();

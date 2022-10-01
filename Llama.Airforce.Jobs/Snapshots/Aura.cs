@@ -1,7 +1,6 @@
 ﻿using System.Numerics;
 using LanguageExt;
 using LanguageExt.Common;
-using LanguageExt.UnsafeValueAccess;
 using Llama.Airforce.Jobs.Contracts;
 using Llama.Airforce.Jobs.Snapshots.Models;
 using Llama.Airforce.SeedWork.Extensions;
@@ -80,7 +79,7 @@ public class Aura
                 .MapTry(x => x.Result.Scores.Aggregate(Map<Address, double>(), (acc, strategy) =>
                 {
                     foreach (var (address, score) in strategy)
-                        acc = acc.AddOrUpdate(Address.Of(address).ValueUnsafe(), x => x + score, score);
+                        acc = acc.AddOrUpdate(Address.Of(address), x => x + score, score);
 
                     return acc;
                 }));

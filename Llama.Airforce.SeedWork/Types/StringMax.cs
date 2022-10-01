@@ -1,4 +1,5 @@
 ﻿using LanguageExt;
+using LanguageExt.UnsafeValueAccess;
 using static LanguageExt.Prelude;
 
 namespace Llama.Airforce.SeedWork.Types;
@@ -17,4 +18,6 @@ public class StringMax : StringOfLength
 
     public static bool IsValid(string value)
         => !string.IsNullOrWhiteSpace(value);
+
+    public static implicit operator StringMax(Option<StringMax> x) => x.ValueUnsafe();
 }

@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using LanguageExt.UnsafeValueAccess;
 using Llama.Airforce.Jobs.Contracts;
 using Llama.Airforce.SeedWork.Types;
 using Microsoft.Extensions.Configuration;
@@ -92,7 +91,7 @@ public class CurveTests
         // Arrange
         var alchemy = Configuration["ALCHEMY"];
         var web3 = new Web3(alchemy);
-        var teth = Address.Of("0x752eBeb79963cf0732E9c0fec72a49FD1DEfAEAC").ValueUnsafe();
+        var teth = Address.Of("0x752eBeb79963cf0732E9c0fec72a49FD1DEfAEAC");
 
         // Act
         var price = await Curve.GetPriceOracle(web3, teth);

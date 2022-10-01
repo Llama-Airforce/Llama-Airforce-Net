@@ -1,5 +1,4 @@
 using LanguageExt;
-using LanguageExt.UnsafeValueAccess;
 using Llama.Airforce.Database.Contexts;
 using Llama.Airforce.SeedWork.Types;
 using Microsoft.AspNetCore.Mvc;
@@ -42,8 +41,8 @@ public class BribesController : ControllerBase
             round = lastRound;
 
         var epochId = Db.Bribes.EpochId.Create(
-            StringMax.Of(platform).ValueUnsafe(),
-            StringMax.Of(protocol).ValueUnsafe(),
+            StringMax.Of(platform),
+            StringMax.Of(protocol),
             round);
 
         var epoch = await Context

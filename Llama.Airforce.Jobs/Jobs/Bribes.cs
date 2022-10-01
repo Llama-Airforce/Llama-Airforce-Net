@@ -1,5 +1,4 @@
 ﻿using LanguageExt;
-using LanguageExt.UnsafeValueAccess;
 using Llama.Airforce.Database.Contexts;
 using Llama.Airforce.Database.Models.Bribes;
 using Llama.Airforce.Domain.Models;
@@ -68,8 +67,8 @@ public class Bribes
                             await context.UpsertAsync(epoch);
 
                             var epochId = EpochId.Create(
-                                StringMax.Of(options.Platform.ToPlatformString()).ValueUnsafe(),
-                                StringMax.Of(options.Protocol.ToProtocolString()).ValueUnsafe(),
+                                StringMax.Of(options.Platform.ToPlatformString()),
+                                StringMax.Of(options.Protocol.ToProtocolString()),
                                 epoch.Round);
 
                             logger.LogInformation($"Updated bribes: {epochId}");

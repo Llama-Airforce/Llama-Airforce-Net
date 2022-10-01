@@ -140,8 +140,8 @@ public static class BribesFactory
             Func<Snap.Proposal, Address, string, EitherAsync<Error, double>> getPrice) =>
         {
             var epochId = EpochId.Create(
-                StringMax.Of(options.Platform.ToPlatformString()).ValueUnsafe(),
-                StringMax.Of(options.Protocol.ToProtocolString()).ValueUnsafe(),
+                StringMax.Of(options.Platform.ToPlatformString()),
+                StringMax.Of(options.Protocol.ToProtocolString()),
                 options.Index + 1);
 
             logger.LogInformation($"Updating bribes: {epochId}");
@@ -204,7 +204,7 @@ public static class BribesFactory
                             // It's possible people vote on 'nothing' through Snapshot.
                             if (voteTotal == 0) return acc;
 
-                            var voter = Address.Of(vote.Voter).ValueUnsafe();
+                            var voter = Address.Of(vote.Voter);
                             var voteWeight = scores.Find(voter).ValueUnsafe();
 
                             // Fix for the mim/mim-ust round 3 fuckup.
@@ -261,7 +261,7 @@ public static class BribesFactory
             Func<Address, string, EitherAsync<Error, double>> getPrice,
             Dom.Bribe bribe) =>
         {
-            var tokenAddress = Address.Of(bribe.Token).ValueUnsafe();
+            var tokenAddress = Address.Of(bribe.Token);
             var token_ = Contracts.ERC20.GetSymbol(web3, tokenAddress).ToEitherAsync();
             var decimals_ = Contracts.ERC20.GetDecimals(web3, tokenAddress).ToEitherAsync();
 

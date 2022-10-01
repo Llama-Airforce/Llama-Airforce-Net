@@ -6,7 +6,7 @@ namespace Llama.Airforce.SeedWork.Types;
 
 public sealed class Currency : StringMax
 {
-    public static Currency Usd = Of("usd").ValueUnsafe();
+    public static Currency Usd = Of("usd");
 
     private Currency(string value)
         : base(value)
@@ -21,4 +21,6 @@ public sealed class Currency : StringMax
     public static new bool IsValid(string value) => StringMax.IsValid(value);
 
     public override string ToString() => this.Value;
+
+    public static implicit operator Currency(Option<Currency> x) => x.ValueUnsafe();
 }

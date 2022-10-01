@@ -1,4 +1,5 @@
 ﻿using LanguageExt;
+using LanguageExt.UnsafeValueAccess;
 using static LanguageExt.Prelude;
 
 namespace Llama.Airforce.SeedWork.Types;
@@ -20,4 +21,6 @@ public sealed class Address : StringOfLength, IComparable<Address>
             && value.Length == 42;
 
     public int CompareTo(Address other) => other.Value.CompareTo(this.Value);
+
+    public static implicit operator Address(Option<Address> x) => x.ValueUnsafe();
 }
