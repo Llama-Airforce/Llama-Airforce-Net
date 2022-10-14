@@ -20,7 +20,10 @@ public class Convex
     public static Func<EitherAsync<Error, Map<string, (int Index, string Id)>>> GetProposalIds = Snapshot.GetProposalIds
         .Par(SPACE_CVX)
         .Par(_ => true)
-        .Par(id => new Sha3Keccack().CalculateHash(id).Insert(0, "0x"));
+        .Par(id => (id.StartsWith("0x")
+                ? new Sha3Keccack().CalculateHashFromHex(id)
+                : new Sha3Keccack().CalculateHash(id))
+            .Insert(0, "0x"));
 
     /// <summary>
     /// Returns score for a list of voters at a certain block number.
