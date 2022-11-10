@@ -32,7 +32,7 @@ public class HiddenHand
 
                 // HiddenHand messed something up and had to restart the proposal.
                 // Because of this, the index we calculate is too high, so we need to reduce it.
-                if (proposalIndex >= 27)
+                if (proposalIndex == 27)
                     proposalIndex--;
 
                 // Generate a mapping for each choice and the corresponding HH proposal id for the subgraph.
