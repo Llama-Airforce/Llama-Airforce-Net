@@ -35,14 +35,16 @@ public class Aura
 
             var auraLockedStrategy = new Dictionary<string, dynamic>
             {
-                { "name", "erc20-votes" },
+                { "name", "erc20-votes-with-override" },
                 {
                     "params",
                     new
                     {
                         symbol = "vlAURA",
                         address,
-                        decimals = 18
+                        decimals = 18,
+                        isSnapshotDelegatedScore = false,
+                        includeSnapshotDelegations = false
                     }
                 }
             };
