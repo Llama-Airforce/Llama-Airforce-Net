@@ -79,7 +79,7 @@ public static class Addresses
         public static Address Token = Address.Of("0xC0c293ce456fF0ED870ADd98a0828Dd4d2903DBF");
         public static Address Locked = Address.Of("0x3Fa73f1E5d8A792C80F426fc8F84FBF7Ce9bBCAC");
 
-        public static Address BalStaked = Address.Of("0x5e5ea2048475854a5702f5b8468a51ba1296efcc"); // auraBAL
+        public static Address BalStaked = Address.Of("0x00A7BA8Ae7bca0B10A32Ea1f8e2a1Da980c6CAd2"); // auraBAL
         public static Address BBAUSDStaked = Address.Of("0xfd176ba656b91f0ce8c59ad5c3245bebb99cd69a");
 
         public static Address VoterProxy = Address.Of("0xaF52695E1bB01A16D33D7194C28C42b10e0Dbec2");
