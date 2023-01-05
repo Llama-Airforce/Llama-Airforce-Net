@@ -15,19 +15,26 @@ public class Aura
     public const string SPACE_AURA = "aurafinance.eth";
     public const string SNAPSHOT_SCORE_URL = "https://score.snapshot.org/api/scores";
 
-    public static Func<EitherAsync<Error, Map<string, (int Index, string Id)>>> GetProposalIds = Snapshot.GetProposalIds
-        .Par(SPACE_AURA)
-        .Par(proposal => proposal.Title.ToLowerInvariant().StartsWith("gauge weight for week of"))
-        .Par(id => id);
+    public static Func<
+            Func<HttpClient>,
+            EitherAsync<Error, Map<string, (int Index, string Id)>>>
+        GetProposalIds = fun((Func<HttpClient> httpFactory) =>
+            Snapshot.GetProposalIds
+                .Par(httpFactory)
+                .Par(SPACE_AURA)
+                .Par(proposal => proposal.Title.ToLowerInvariant().StartsWith("gauge weight for week of"))
+                .Par(id => id)());
 
     /// <summary>
     /// Returns score for a list of voters at a certain block number.
     /// </summary>
     public static Func<
+            Func<HttpClient>,
             Lst<Address>,
             BigInteger,
             EitherAsync<Error, Map<Address, double>>>
         GetScores = fun((
+            Func<HttpClient> httpFactory,
             Lst<Address> voters,
             BigInteger block) =>
         {
@@ -74,6 +81,7 @@ public class Aura
             return Functions
                 .HttpFunctions
                 .GetData(
+                    httpFactory,
                     SNAPSHOT_SCORE_URL,
                     JsonConvert.SerializeObject(new Dictionary<string, dynamic> { { "params", @params } }))
                 .MapTry(JsonConvert.DeserializeObject<RequestScores>)

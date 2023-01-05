@@ -34,11 +34,13 @@ public static class DefiLlama
     public const string DEFILLAMA_PRICES_URL = "https://coins.llama.fi/prices";
 
     public static Func<
+            Func<HttpClient>,
             Address,
             Network,
             Option<DateTime>,
             EitherAsync<Error, double>>
         GetPrice = fun((
+            Func<HttpClient> httpFactory,
             Address address,
             Network network,
             Option<DateTime> date) =>
@@ -53,6 +55,7 @@ public static class DefiLlama
             return Functions
                 .HttpFunctions
                 .GetData(
+                    httpFactory,
                     DEFILLAMA_PRICES_URL,
                     JsonConvert.SerializeObject(body))
                 .MapTry(JsonConvert.DeserializeObject<RequestPrice>)

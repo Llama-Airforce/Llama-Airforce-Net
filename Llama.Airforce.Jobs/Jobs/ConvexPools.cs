@@ -12,15 +12,17 @@ public class ConvexPools
 {
     public static Func<
         ILogger,
+        Func<HttpClient>,
         string,
         PoolContext,
         Task<Lst<Pool>>>
     UpdateConvexPools = fun((
         ILogger logger,
+        Func<HttpClient> httpFactory,
         string graphUrl,
         PoolContext poolContext) =>
     Convex
-        .GetPools(graphUrl)
+        .GetPools(httpFactory, graphUrl)
         .MatchAsync(
             RightAsync: async pools =>
             {
@@ -51,17 +53,19 @@ public class ConvexPools
 
     public static Func<
             ILogger,
+            Func<HttpClient>,
             string,
             PoolSnapshotsContext,
             Pool,
             Task>
         UpdateConvexPoolSnapshots = fun((
             ILogger logger,
+            Func<HttpClient> httpFactory,
             string graphUrl,
             PoolSnapshotsContext context,
             Pool pool) =>
         Convex
-            .GetDailySnapshots(graphUrl, pool.Name)
+            .GetDailySnapshots(httpFactory, graphUrl, pool.Name)
             .MatchAsync(
                 RightAsync: async snapshots =>
                 {

@@ -25,16 +25,18 @@ public static class PriceFunctions
     /// Last attempt fallback values for tokens in case coingecko price fetching fails.
     /// </summary>
     public static Func<
+            Func<HttpClient>,
             Option<IWeb3>,
             string,
             OptionAsync<double>>
         Fallback = fun((
+            Func<HttpClient> httpFactory,
             Option<IWeb3> web3,
             string token) => token switch
         {
             "USDM" => SomeAsync(1.0),
             "BB-A-USD" => SomeAsync(1.0),
-            "T" => web3.Match(w => GetCurveV2Price(w, Addresses.ERC20.T).ToOption(), () => None),
+            "T" => web3.Match(w => GetCurveV2Price(httpFactory, w, Addresses.ERC20.T).ToOption(), () => None),
             _ => None
         });
 
@@ -57,6 +59,7 @@ public static class PriceFunctions
     });
 
     public static Func<
+            Func<HttpClient>,
             Address,
             Network,
             Option<IWeb3>,
@@ -64,6 +67,7 @@ public static class PriceFunctions
             Option<string>,
             EitherAsync<Error, double>>
         GetPriceExt = fun((
+            Func<HttpClient> httpFactory,
             Address address,
             Network network,
             Option<IWeb3> web3,
@@ -75,14 +79,15 @@ public static class PriceFunctions
                 .Bind(Address.Of)
                 .ToEitherAsync(ex));
 
-            return DefiLlama.GetPrice(address, network, date_)
+            return DefiLlama.GetPrice(httpFactory, address, network, date_)
                 // Try fallback address if fetching fails.
-                .BindLeft(ex => fallback(ex).Bind(fb => DefiLlama.GetPrice(fb, network, date_)))
+                .BindLeft(ex => fallback(ex).Bind(fb => DefiLlama.GetPrice(httpFactory, fb, network, date_)))
                 // Fallback to Coingecko in case of failure with original address.
-                .BindLeft(ex => CoinGecko.GetPriceAtTime(address, network, Currency.Usd, date_))
+                .BindLeft(ex => CoinGecko.GetPriceAtTime(httpFactory, address, network, Currency.Usd, date_))
                 // Try different address if fetching fails.
                 .BindLeft(ex => fallback(ex).Bind(fb => CoinGecko
                     .GetPriceAtTime(
+                        httpFactory,
                         fb,
                         network,
                         Currency.Usd,
@@ -90,32 +95,36 @@ public static class PriceFunctions
                 // Last ditch effort to look at hardcoded price fallback values.
                 .BindLeft(ex => token
                     .ToAsync()
-                    .Bind(par(Fallback, web3))
+                    .Bind(par(Fallback.Par(httpFactory), web3))
                     .ToEither(Error.New($"Could not find fallback dollar value for {address}\n" + ex.Message, ex)));
         });
 
     public static Func<
+            Func<HttpClient>,
             Address,
             Network,
             Option<IWeb3>,
             EitherAsync<Error, double>>
         GetPrice = fun((
+            Func<HttpClient> httpFactory,
             Address address,
             Network network,
-            Option<IWeb3> web3) => GetPriceExt(address, network, web3, None, None));
+            Option<IWeb3> web3) => GetPriceExt(httpFactory, address, network, web3, None, None));
 
     /// <summary>
     /// Returns the current price in dollars for a token by looking at its ETH Curve V2 LP.
     /// </summary>
     public static Func<
+            Func<HttpClient>,
             IWeb3,
             Address,
             EitherAsync<Error, double>>
         GetCurveV2Price = fun((
+            Func<HttpClient> httpFactory,
             IWeb3 web3,
             Address token) =>
     {
-        var weth_ = GetPriceExt(Addresses.ERC20.WETH, Network.Ethereum, Some(web3), None, "WETH");
+        var weth_ = GetPriceExt(httpFactory, Addresses.ERC20.WETH, Network.Ethereum, Some(web3), None, "WETH");
         var decimals_ = ERC20.GetDecimals(web3, token).ToEitherAsync();
         var lpToken_ = CurveV2LpAddress(token).ToEitherAsync(Error.New($"No Curve V2 LP found for {token}"));
 
@@ -135,13 +144,15 @@ public static class PriceFunctions
     });
 
     public static Func<
+            Func<HttpClient>,
             IWeb3,
             EitherAsync<Error, double>>
         GetAuraBalPrice = fun((
+            Func<HttpClient> httpFactory,
             IWeb3 web3) =>
         {
-            var bal_ = GetPrice(Addresses.Balancer.Token, Network.Ethereum, Some(web3));
-            var weth_ = GetPrice(Addresses.ERC20.WETH, Network.Ethereum, Some(web3));
+            var bal_ = GetPrice(httpFactory, Addresses.Balancer.Token, Network.Ethereum, Some(web3));
+            var weth_ = GetPrice(httpFactory, Addresses.ERC20.WETH, Network.Ethereum, Some(web3));
             var totalSupply_ = Balancer.GetTotalSupplyBPT(web3).ToEitherAsync();
             var poolTokens_ = Balancer
                 .GetPoolTokens(

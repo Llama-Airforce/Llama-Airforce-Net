@@ -2,6 +2,7 @@ using Llama.Airforce.Database.Contexts;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Net.Http;
 using System.Threading.Tasks;
 using static LanguageExt.Prelude;
 
@@ -13,17 +14,20 @@ public class CurvePools
     private readonly CurvePoolContext CurvePoolContext;
     private readonly CurvePoolSnapshotsContext CurvePoolSnapshotsContext;
     private readonly CurvePoolRatiosContext CurvePoolRatiosContext;
+    private readonly IHttpClientFactory HttpClientFactory;
 
     public CurvePools(
         IConfiguration config,
         CurvePoolContext curvePoolContext,
         CurvePoolSnapshotsContext curvePoolSnapshotsContext,
-        CurvePoolRatiosContext curvePoolRatiosContext)
+        CurvePoolRatiosContext curvePoolRatiosContext,
+        IHttpClientFactory httpClientFactory)
     {
         Config = config;
         CurvePoolContext = curvePoolContext;
         CurvePoolSnapshotsContext = curvePoolSnapshotsContext;
         CurvePoolRatiosContext = curvePoolRatiosContext;
+        HttpClientFactory = httpClientFactory;
     }
 
     [FunctionName("CurvePools")]
@@ -31,7 +35,10 @@ public class CurvePools
         [TimerTrigger("0 0 */12 * * *", RunOnStartup = false)] TimerInfo curvePoolsTimer,
         ILogger log)
     {
-        var poolsCurve = await Jobs.Jobs.CurvePools.UpdateCurvePools(log, CurvePoolContext);
+        var poolsCurve = await Jobs.Jobs.CurvePools.UpdateCurvePools(
+            log,
+            HttpClientFactory.CreateClient,
+            CurvePoolContext);
 
         var alchemyEndpoint = Config.GetValue<string>("ALCHEMY");
         var snapshots = List<Database.Models.Curve.CurvePoolSnapshots>();
@@ -41,6 +48,7 @@ public class CurvePools
         {
             var snapshot = await Jobs.Jobs.CurvePools.UpdateCurvePoolSnapshots(
                 log,
+                HttpClientFactory.CreateClient,
                 alchemyEndpoint,
                 CurvePoolSnapshotsContext,
                 pool);

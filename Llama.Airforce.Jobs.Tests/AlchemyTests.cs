@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Net.Http;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using NUnit.Framework;
 
@@ -22,9 +23,10 @@ public class AlchemyTests
     {
         // Arrange
         var alchemy = Configuration["ALCHEMY"];
+        HttpClient http() => new();
 
         // Act
-        var data = Alchemy.GetCurrentBlock(alchemy);
+        var data = Alchemy.GetCurrentBlock(http, alchemy);
 
         // Assert
         Assert.IsTrue(await data.IsRight);

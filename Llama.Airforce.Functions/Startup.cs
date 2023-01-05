@@ -15,6 +15,7 @@ public class Startup : FunctionsStartup
     {
         var config = builder.GetContext().Configuration;
 
+        builder.Services.AddHttpClient();
         builder.Services.AddContexts(config);
 
         var alchemy = config.GetValue<string>("ALCHEMY");

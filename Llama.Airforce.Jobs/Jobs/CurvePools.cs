@@ -13,13 +13,15 @@ public class CurvePools
 {
     public static Func<
         ILogger,
+        Func<HttpClient>,
         CurvePoolContext,
         Task<Lst<CurvePool>>>
     UpdateCurvePools = fun((
         ILogger logger,
+        Func<HttpClient> httpFactory,
         CurvePoolContext poolContext) =>
     Subgraphs.Curve
-        .GetPools()
+        .GetPools(httpFactory)
         .MatchAsync(
             RightAsync: async pools =>
             {
@@ -51,17 +53,19 @@ public class CurvePools
 
     public static Func<
             ILogger,
+            Func<HttpClient>,
             string,
             CurvePoolSnapshotsContext,
             CurvePool,
             Task<Option<Db.Curve.CurvePoolSnapshots>>>
         UpdateCurvePoolSnapshots = fun((
             ILogger logger,
+            Func<HttpClient> httpFactory,
             string alchemyEndpoint,
             CurvePoolSnapshotsContext context,
             CurvePool pool) =>
         Subgraphs.Curve
-            .GetPoolSnapshots(pool.Name)
+            .GetPoolSnapshots(httpFactory, pool.Name)
             .MatchAsync(
                 async snapshot =>
                 {
@@ -70,7 +74,7 @@ public class CurvePools
                         .FeeSnapshotList
                         .Min(x => x.Block) - 6200 * 7;
 
-                    var transfers_ = Alchemy.GetTransfers(alchemyEndpoint, pool);
+                    var transfers_ = Alchemy.GetTransfers(httpFactory, alchemyEndpoint, pool);
                     var feeSnapshots_ = pool.IsV2
                         ? snapshot.FeeSnapshotList
                             .Map(s => new Db.Curve.FeeSnapshot

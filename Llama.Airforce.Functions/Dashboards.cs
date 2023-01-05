@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using LanguageExt;
 using Llama.Airforce.Database.Contexts;
@@ -18,15 +19,18 @@ public class Dashboards
     private readonly IWeb3 Web3;
     private readonly BribesContext BribesContext;
     private readonly DashboardContext DashboardContext;
+    private readonly IHttpClientFactory HttpClientFactory;
 
     public Dashboards(
         IWeb3 web3,
         BribesContext bribesContext,
-        DashboardContext dashboardContext)
+        DashboardContext dashboardContext,
+        IHttpClientFactory httpClientFactory)
     {
         Web3 = web3;
         BribesContext = bribesContext;
         DashboardContext = dashboardContext;
+        HttpClientFactory = httpClientFactory;
     }
 
     [FunctionName("Dashboards")]
@@ -67,6 +71,7 @@ public class Dashboards
         await Jobs.Jobs.Dashboards.UpdateDashboards(
             log,
             Web3,
+            HttpClientFactory.CreateClient,
             DashboardContext,
             votiumData,
             auraData);

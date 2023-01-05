@@ -13,9 +13,11 @@ public class Convex
     /// Returns general Convex pool data from The Graph
     /// </summary>
     public static Func<
+            Func<HttpClient>,
             string,
             EitherAsync<Error, Lst<Pool>>>
         GetPools = fun((
+            Func<HttpClient> httpFactory,
             string graphUrl) =>
         {
             const string Query = @"{
@@ -33,7 +35,7 @@ pools(
     extraRewardsApr
 } }";
 
-            return Subgraph.GetData(graphUrl, Query)
+            return Subgraph.GetData(httpFactory, graphUrl, Query)
                 .MapTry(JsonConvert.DeserializeObject<RequestPools>)
                 .MapTry(data => toList(data.Data.PoolList));
         });
@@ -42,10 +44,12 @@ pools(
     /// Returns general snapshot data for a Convex pool from The Graph
     /// </summary>
     public static Func<
+            Func<HttpClient>,
             string,
             string,
             EitherAsync<Error, Lst<Snapshot>>>
         GetDailySnapshots = fun((
+            Func<HttpClient> httpFactory,
             string graphUrl,
             string pool) =>
         {
@@ -64,7 +68,7 @@ dailyPoolSnapshots(
     extraRewardsApr
 }} }}";
 
-            return Subgraph.GetData(graphUrl, query)
+            return Subgraph.GetData(httpFactory, graphUrl, query)
                 .MapTry(JsonConvert.DeserializeObject<RequestSnapshots>)
                 .MapTry(data => toList(data.Data.SnapshotList));
         });

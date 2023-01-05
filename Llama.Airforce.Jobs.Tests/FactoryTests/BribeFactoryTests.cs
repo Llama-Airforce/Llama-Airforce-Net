@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Llama.Airforce.Domain.Models;
 using Llama.Airforce.Jobs.Extensions;
@@ -41,6 +42,7 @@ public class BribeFactoryTests
         // Arrange
         var alchemy = Configuration["ALCHEMY"];
         var web3 = new Web3(alchemy);
+        HttpClient http() => new();
         var logger = new LoggerFactory().CreateLogger("test");
         var getPrice = fun((Proposal proposal, Address tokenAddress, string token) =>
         {
@@ -51,6 +53,7 @@ public class BribeFactoryTests
             time = time > DateTime.UtcNow ? DateTime.UtcNow : time;
 
             return PriceFunctions.GetPriceExt(
+                http,
                 tokenAddress,
                 PriceFunctions.GetNetwork(token),
                 web3,
@@ -59,7 +62,7 @@ public class BribeFactoryTests
         });
 
         // Act
-        var bribeFunctions = BribesFactory.GetBribesFunctions(platform, protocol);
+        var bribeFunctions = BribesFactory.GetBribesFunctions(platform, protocol, http);
 
         var proposalIds = await bribeFunctions.GetProposalIds()
             .MatchAsync(x => x, _ => throw new Exception());

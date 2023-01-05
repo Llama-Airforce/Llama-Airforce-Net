@@ -11,15 +11,17 @@ public static class HttpFunctions
     /// Returns general json data from Snapshot
     /// </summary>
     public static Func<
+            Func<HttpClient>,
             string,
             string,
             EitherAsync<Error, string>>
         GetData = fun((
+            Func<HttpClient> httpFactory,
             string url,
             string bodyContent) =>
         TryAsync(async () =>
         {
-            using var httpClient = new HttpClient();
+            using var httpClient = httpFactory();
             var body = new StringContent(
                 bodyContent,
                 Encoding.UTF8,

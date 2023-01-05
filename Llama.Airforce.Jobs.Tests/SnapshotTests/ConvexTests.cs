@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Net.Http;
+using System.Numerics;
 using System.Threading.Tasks;
 using LanguageExt.UnsafeValueAccess;
 using Llama.Airforce.Jobs.Snapshots;
@@ -14,9 +15,10 @@ public class ConvexTests
     public async Task GetProposalIds()
     {
         // Arrange
+        HttpClient http() => new();
 
         // Act
-        var data = await Convex.GetProposalIds()
+        var data = await Convex.GetProposalIds(http)
             .MatchAsync(x => x, _ => throw new System.Exception());
 
         // Assert
@@ -29,9 +31,10 @@ public class ConvexTests
         // Arrange
         var address = Address.Of("0xde1e6a7ed0ad3f61d531a8a78e83ccddbd6e0c49").ValueUnsafe();
         var block = new BigInteger(13413053);
+        HttpClient http() => new();
 
         // Act
-        var scores = await Convex.GetScores(List(address), block)
+        var scores = await Convex.GetScores(http, List(address), block)
             .MatchAsync(x => x, _ => throw new System.Exception());
 
         // Assert

@@ -14,15 +14,17 @@ public static class CoinGecko
     /// Returns general market data from Coingecko for a given token address.
     /// </summary>
     public static Func<
+            Func<HttpClient>,
             Address,
             Network,
             EitherAsync<Error, JObject>>
         GetData = fun((
+            Func<HttpClient> httpFactory,
             Address address,
             Network network) =>
         TryAsync(async () =>
         {
-            using var httpClient = new HttpClient();
+            using var httpClient = httpFactory();
             var url = $"https://api.coingecko.com/api/v3/coins/{network.NetworkToString()}/contract/{address}?tickers=false&community_data=false&developer_data=false";
 
             var resp = await httpClient.GetAsync(url);
@@ -66,17 +68,19 @@ public static class CoinGecko
 
 
     public static Func<
+            Func<HttpClient>,
             Address,
             Network,
             Currency,
             EitherAsync<Error, double>>
         GetPrice = fun((
+            Func<HttpClient> httpFactory,
             Address address,
             Network network,
             Currency currency) =>
         TryAsync(async () =>
         {
-            using var httpClient = new HttpClient();
+            using var httpClient = httpFactory();
             var url = $"https://api.coingecko.com/api/v3/simple/token_price/{network.NetworkToString()}?contract_addresses={address}&vs_currencies={currency}";
 
             var resp = await httpClient.GetAsync(url);
@@ -99,12 +103,14 @@ public static class CoinGecko
             .ToEither());
 
     public static Func<
+            Func<HttpClient>,
             Address,
             Network,
             Currency,
             DateTime,
             EitherAsync<Error, double>>
         GetPriceAtTime = fun((
+            Func<HttpClient> httpFactory,
             Address address,
             Network network,
             Currency currency,
@@ -115,7 +121,7 @@ public static class CoinGecko
             var from = new DateTime(date.Ticks, date.Kind).AddHours(-2).ToUnixTimeSeconds();
             var to = new DateTime(date.Ticks, date.Kind).AddHours(2).ToUnixTimeSeconds();
 
-            using var httpClient = new HttpClient();
+            using var httpClient = httpFactory();
             var url = $"https://api.coingecko.com/api/v3/coins/{network.NetworkToString()}/contract/{address}/market_chart/range?vs_currency={currency}&from={from}&to={to}";
 
             var resp = await httpClient.GetAsync(url);

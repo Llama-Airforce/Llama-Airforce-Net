@@ -14,7 +14,11 @@ public class Curve
     /// <summary>
     /// Returns general Curve pool data from The Graph
     /// </summary>
-    public static Func<EitherAsync<Error, Lst<CurvePool>>> GetPools = fun(() =>
+    public static Func<
+            Func<HttpClient>,
+            EitherAsync<Error, Lst<CurvePool>>>
+        GetPools = fun((
+            Func<HttpClient> httpFactory) =>
     {
         const string Query = @"
         {
@@ -34,7 +38,7 @@ public class Curve
             }
         }";
 
-        return Subgraph.GetData(SUBGRAPH_URL_CURVE, Query)
+        return Subgraph.GetData(httpFactory, SUBGRAPH_URL_CURVE, Query)
             .MapTry(JsonConvert.DeserializeObject<RequestCurvePools>)
             .MapTry(data => toList(data.Data.CurvePoolList));
     });
@@ -43,7 +47,13 @@ public class Curve
     /// <summary>
     /// Returns fees and emissions snapshots of Curve pools from The Graph
     /// </summary>
-    public static Func<string, EitherAsync<Error, CurvePoolSnapshot>> GetPoolSnapshots = fun((string pool) =>
+    public static Func<
+            Func<HttpClient>,
+            string,
+            EitherAsync<Error, CurvePoolSnapshot>>
+        GetPoolSnapshots = fun((
+            Func<HttpClient> httpFactory,
+            string pool) =>
     {
         string query = $@"
         {{
@@ -67,7 +77,7 @@ public class Curve
             }}
         }}";
 
-        return Subgraph.GetData(SUBGRAPH_URL_CURVE, query)
+        return Subgraph.GetData(httpFactory, SUBGRAPH_URL_CURVE, query)
             .MapTry(JsonConvert.DeserializeObject<RequestCurvePoolSnapshots>)
             .MapTry(data => data.Data.CurveSnapshotList.Single());
     });
@@ -75,7 +85,11 @@ public class Curve
     /// <summary>
     /// Returns fees and emissions snapshots of Curve pools from The Graph
     /// </summary>
-    public static Func<EitherAsync<Error, Lst<CurvePoolSnapshot>>> GetPoolSnapshotsForRatio = fun(() =>
+    public static Func<
+            Func<HttpClient>,
+            EitherAsync<Error, Lst<CurvePoolSnapshot>>>
+        GetPoolSnapshotsForRatio = fun((
+            Func<HttpClient> httpFactory) =>
     {
         string query = $@"
         {{
@@ -103,7 +117,7 @@ public class Curve
             }}
         }}";
 
-        return Subgraph.GetData(SUBGRAPH_URL_CURVE, query)
+        return Subgraph.GetData(httpFactory, SUBGRAPH_URL_CURVE, query)
             .MapTry(JsonConvert.DeserializeObject<RequestCurvePoolSnapshots>)
             .MapTry(data => toList(data.Data.CurveSnapshotList));
     });

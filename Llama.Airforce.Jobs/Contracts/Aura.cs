@@ -64,14 +64,20 @@ public static class Aura
     /// <summary>
     /// Returns the APR for single-sided staking of auraBAL.
     /// </summary>
-    public static Func<IWeb3, EitherAsync<Error, double>> GetAuraBalApr = fun((IWeb3 web3) =>
+    public static Func<
+            Func<HttpClient>,
+            IWeb3,
+            EitherAsync<Error, double>>
+        GetAuraBalApr = fun((
+            Func<HttpClient> httpFactory, 
+            IWeb3 web3) =>
     {
-        var balPrice_ = PriceFunctions.GetPrice(Addresses.Balancer.Token, Network.Ethereum, Some(web3));
-        var bbausdPrice_ = PriceFunctions.GetPriceExt(Addresses.Balancer.BBAUSDToken, Network.Ethereum, Some(web3), None, "BB-A-USD");
-        var auraPrice_ = PriceFunctions.GetPrice(Addresses.Aura.Token, Network.Ethereum, Some(web3));
+        var balPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Balancer.Token, Network.Ethereum, Some(web3));
+        var bbausdPrice_ = PriceFunctions.GetPriceExt(httpFactory, Addresses.Balancer.BBAUSDToken, Network.Ethereum, Some(web3), None, "BB-A-USD");
+        var auraPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Aura.Token, Network.Ethereum, Some(web3));
 
         // For some reason DefiLlama and CoinGecko can't return the price at a specific time, so we fall back to 'normal' price fetching.
-        var auraBalPrice_ = PriceFunctions.GetAuraBalPrice(web3);
+        var auraBalPrice_ = PriceFunctions.GetAuraBalPrice(httpFactory, web3);
 
         var balRate_ = GetRewardRate(web3, Addresses.Aura.BalStaked).DivideByDecimals(AuraDecimals).ToEitherAsync();
         var bbausdRate_ = GetRewardRate(web3, Addresses.Aura.BBAUSDStaked).DivideByDecimals(AuraDecimals).ToEitherAsync();

@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Net.Http;
+using System.Threading.Tasks;
 using Llama.Airforce.Jobs.Snapshots;
 using NUnit.Framework;
 
@@ -10,10 +11,10 @@ public class AuraTests
     public async Task GetProposalIds()
     {
         // Arrange
-        
+        HttpClient http() => new();
 
         // Act
-        var data = await Aura.GetProposalIds()
+        var data = await Aura.GetProposalIds(http)
             .MatchAsync(x => x, _ => throw new System.Exception());
 
         // Assert

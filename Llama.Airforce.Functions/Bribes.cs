@@ -1,3 +1,4 @@
+using System.Net.Http;
 using System.Threading.Tasks;
 using Llama.Airforce.Database.Contexts;
 using Llama.Airforce.Domain.Models;
@@ -15,15 +16,18 @@ public class Bribes
     private readonly IConfiguration Config;
     private readonly IWeb3 Web3;
     private readonly BribesContext BribesContext;
+    private readonly IHttpClientFactory HttpClientFactory;
 
     public Bribes(
         IConfiguration config,
         IWeb3 web3,
-        BribesContext bribesContext)
+        BribesContext bribesContext,
+        IHttpClientFactory httpClientFactory)
     {
         Config = config;
         Web3 = web3;
         BribesContext = bribesContext;
+        HttpClientFactory = httpClientFactory;
     }
 
     [FunctionName("Bribes")]
@@ -36,6 +40,7 @@ public class Bribes
         await Jobs.Jobs.Bribes.UpdateBribes(
             log,
             BribesContext,
+            HttpClientFactory.CreateClient,
             Web3,
             new BribesFactory.OptionsGetBribes(
                 Platform.Votium,
@@ -46,6 +51,7 @@ public class Bribes
         await Jobs.Jobs.Bribes.UpdateBribes(
             log,
             BribesContext,
+            HttpClientFactory.CreateClient,
             Web3,
             new BribesFactory.OptionsGetBribes(
                 Platform.HiddenHand,

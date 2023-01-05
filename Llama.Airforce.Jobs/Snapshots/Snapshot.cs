@@ -16,14 +16,17 @@ public static class Snapshot
     /// Returns general json data from Snapshot
     /// </summary>
     public static Func<
+            Func<HttpClient>,
             string,
             string,
             EitherAsync<Error, string>>
         GetData = fun((
+            Func<HttpClient> httpFactory,
             string url,
             string query) => Functions
         .HttpFunctions
         .GetData(
+            httpFactory,
             url,
             JsonConvert.SerializeObject(new
             {
@@ -35,11 +38,13 @@ public static class Snapshot
     /// The key is the original proposal id, the value is the hash used by the bribes platform.
     /// </summary>
     public static Func<
+            Func<HttpClient>,
             string,
             Func<Proposal, bool>,
             Func<string, string>,
             EitherAsync<Error, Map<string, (int Index, string Id)>>>
         GetProposalIds = fun((
+            Func<HttpClient> httpFactory,
             string space,
             Func<Proposal, bool> filter,
             Func<string, string> valueMap) =>
@@ -55,7 +60,7 @@ proposals(
     title
 }} }}";
 
-            return GetData(SNAPSHOT_URL, Query)
+            return GetData(httpFactory, SNAPSHOT_URL, Query)
                 .MapTry(JsonConvert.DeserializeObject<RequestProposals>)
                 .MapTry(data => toMap(data
                     .Data
@@ -71,9 +76,11 @@ proposals(
     /// Returns general proposal data from The Graph.
     /// </summary>
     public static Func<
+            Func<HttpClient>,
             string,
             EitherAsync<Error, Proposal>>
         GetProposal = fun((
+            Func<HttpClient> httpFactory,
             string id) =>
         {
             var query = $@"{{
@@ -88,7 +95,7 @@ proposals(
     scores_total
 }} }}";
 
-            return GetData(SNAPSHOT_URL, query)
+            return GetData(httpFactory, SNAPSHOT_URL, query)
                 .MapTry(JsonConvert.DeserializeObject<RequestProposals>)
                 .MapTry(
                     data => data.Data.ProposalList.Single(),
@@ -99,9 +106,11 @@ proposals(
     /// Returns how many choices a proposal has.
     /// </summary>
     public static Func<
+            Func<HttpClient>,
             string,
             EitherAsync<Error, int>>
         GetNumChoices = fun((
+            Func<HttpClient> httpFactory,
             string id) =>
         {
             var query = $@"{{
@@ -111,7 +120,7 @@ proposals(
     choices
 }} }}";
 
-            return GetData(SNAPSHOT_URL, query)
+            return GetData(httpFactory, SNAPSHOT_URL, query)
                 .MapTry(JsonConvert.DeserializeObject<RequestProposals>)
                 .MapTry(
                     data => data.Data.ProposalList.Single().Choices.Count,
@@ -122,9 +131,11 @@ proposals(
     /// Returns vote data for a specific proposal.
     /// </summary>
     public static Func<
+            Func<HttpClient>,
             string,
             EitherAsync<Error, Lst<Vote>>>
         GetVotes = fun((
+            Func<HttpClient> httpFactory,
             string id) =>
         {
             var fs = fun((int page, int offset) =>
@@ -142,7 +153,7 @@ votes(
     choice
 }} }}";
 
-                return GetData(SNAPSHOT_URL, query)
+                return GetData(httpFactory, SNAPSHOT_URL, query)
                     .MapTry(JsonConvert.DeserializeObject<RequestVotes>)
                     .MapTry(x => toList(x.Data.VoteList));
             });

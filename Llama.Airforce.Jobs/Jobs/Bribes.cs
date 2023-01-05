@@ -19,6 +19,7 @@ public class Bribes
     public static Func<
             ILogger,
             BribesContext,
+            Func<HttpClient>,
             IWeb3,
             BribesFactory.OptionsGetBribes,
             Option<DateTime>,
@@ -26,6 +27,7 @@ public class Bribes
         UpdateBribes = fun((
             ILogger logger,
             BribesContext context,
+            Func<HttpClient> httpFactory,
             IWeb3 web3,
             BribesFactory.OptionsGetBribes options,
             Option<DateTime> customTime) =>
@@ -40,6 +42,7 @@ public class Bribes
 
                 var network = PriceFunctions.GetNetwork(token);
                 var priceAtTime = PriceFunctions.GetPriceExt(
+                    httpFactory,
                     tokenAddress,
                     network,
                     Some(web3),
@@ -49,6 +52,7 @@ public class Bribes
                 var price = priceAtTime
                     // If the price fails for a given time, use spot price.
                     .BindLeft(ex => PriceFunctions.GetPrice(
+                        httpFactory,
                         tokenAddress,
                         network,
                         Some(web3)));
@@ -57,7 +61,7 @@ public class Bribes
             });
 
             return BribesFactory
-                .GetBribes(logger, web3, options, getPrice)
+                .GetBribes(logger, web3, httpFactory, options, getPrice)
                 .MatchAsync(
                     RightAsync: async epochs =>
                     {

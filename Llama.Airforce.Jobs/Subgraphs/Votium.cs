@@ -15,7 +15,10 @@ public class Votium
     /// <summary>
     /// Returns Votium epoch & bribe history from The Graph
     /// </summary>
-    public static Func<EitherAsync<Error, Lst<Dom.Epoch>>> GetEpochs = fun(() =>
+    public static Func<
+            Func<HttpClient>,
+            EitherAsync<Error, Lst<Dom.Epoch>>>
+        GetEpochs = fun((Func<HttpClient> httpFactory) =>
     {
         const string Query = @"{
 epoches(
@@ -35,7 +38,7 @@ epoches(
     }
 } }";
 
-        return Subgraph.GetData(SUBGRAPH_URL_VOTIUM, Query)
+        return Subgraph.GetData(httpFactory, SUBGRAPH_URL_VOTIUM, Query)
             .MapTry(JsonConvert.DeserializeObject<RequestEpochsVotium>)
             .MapTry(data => toList(data
                 .Data

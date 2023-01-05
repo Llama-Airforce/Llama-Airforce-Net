@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Net.Http;
+using System.Threading.Tasks;
 using Llama.Airforce.Jobs.Contracts;
 using Microsoft.Extensions.Configuration;
 using Nethereum.Web3;
@@ -64,9 +66,10 @@ public class ConvexTests
         // Arrange
         var alchemy = Configuration["ALCHEMY"];
         var web3 = new Web3(alchemy);
+        HttpClient http() => new();
 
         // Act
-        var apr = Convex.GetLockedApr(web3);
+        var apr = Convex.GetLockedApr(http, web3);
 
         // Assert
         Assert.IsTrue(await apr.IsRight);
@@ -78,9 +81,10 @@ public class ConvexTests
         // Arrange
         var alchemy = Configuration["ALCHEMY"];
         var web3 = new Web3(alchemy);
+        HttpClient http() => new();
 
         // Act
-        var apr = Convex.GetCvxCrvApr(web3);
+        var apr = Convex.GetCvxCrvApr(http, web3);
 
         // Assert
         Assert.IsTrue(await apr.IsRight);
@@ -92,9 +96,10 @@ public class ConvexTests
         // Arrange
         var alchemy = Configuration["ALCHEMY"];
         var web3 = new Web3(alchemy);
+        HttpClient http() => new();
 
         // Act
-        var lockedCrv = Convex.GetLockedCrvUsd(web3);
+        var lockedCrv = Convex.GetLockedCrvUsd(http, web3);
 
         // Assert
         Assert.IsTrue(await lockedCrv.IsRight);

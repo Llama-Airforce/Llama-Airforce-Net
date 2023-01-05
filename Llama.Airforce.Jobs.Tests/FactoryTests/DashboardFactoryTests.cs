@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading.Tasks;
 using LanguageExt;
 using Llama.Airforce.Database.Models.Bribes;
@@ -29,6 +30,7 @@ public class DashboardFactoryTests
         // Arrange
         var alchemy = Configuration["ALCHEMY"];
         var web3 = new Web3(alchemy);
+        HttpClient http() => new();
         var logger = new LoggerFactory().CreateLogger("test");
         var epochs = Lst<Epoch>.Empty;
         var latestFinishedEpoch = new Epoch
@@ -43,7 +45,7 @@ public class DashboardFactoryTests
             latestFinishedEpoch);
 
         // Act
-        var overview = await DashboardFactory.CreateOverviewVotium(logger, web3, data)
+        var overview = await DashboardFactory.CreateOverviewVotium(logger, web3, http, data)
             .MatchAsync(x => x, _ => throw new System.Exception());
 
         // Assert
@@ -56,6 +58,7 @@ public class DashboardFactoryTests
         // Arrange
         var alchemy = Configuration["ALCHEMY"];
         var web3 = new Web3(alchemy);
+        HttpClient http() => new();
         var logger = new LoggerFactory().CreateLogger("test");
         var epochs = Lst<Epoch>.Empty;
         var latestFinishedEpoch = new Epoch
@@ -70,7 +73,7 @@ public class DashboardFactoryTests
             latestFinishedEpoch);
 
         // Act
-        var overview = await DashboardFactory.CreateOverviewVotium(logger, web3, data);
+        var overview = await DashboardFactory.CreateOverviewVotium(logger, web3, http, data);
 
         // Assert
         Assert.IsTrue(overview.IsLeft && overview.LeftToList().First().Message == "Total scores is zero");

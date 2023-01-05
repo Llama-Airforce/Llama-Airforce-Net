@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Net.Http;
+using System.Threading.Tasks;
 using Llama.Airforce.Jobs.Subgraphs;
 using NUnit.Framework;
 
@@ -10,9 +11,10 @@ public class VotiumTests
     public async Task GetEpochs()
     {
         // Arrange
+        HttpClient http() => new();
 
         // Act
-        var data = await Votium.GetEpochs()
+        var data = await Votium.GetEpochs(http)
             .MatchAsync(x => x, _ => throw new System.Exception());
 
         // Assert

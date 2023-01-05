@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Net.Http;
+using System.Threading.Tasks;
 using Llama.Airforce.Jobs.Snapshots;
 using NUnit.Framework;
 
@@ -11,9 +12,10 @@ public class SnapshotTests
     {
         // Arrange
         var id = "QmaS9vd1vJKQNBYX4KWQ3nppsTT3QSL3nkz5ZYSwEJk6hZ";
+        HttpClient http() => new();
 
         // Act
-        var data = await Snapshot.GetProposal(id)
+        var data = await Snapshot.GetProposal(http, id)
             .MatchAsync(x => x, _ => throw new System.Exception());
 
         // Assert
@@ -27,9 +29,10 @@ public class SnapshotTests
     {
         // Arrange
         var id = "0xabaf9275ae0533ce991059e8b5664225bf54bae81b9305ae60b48198db180ad9";
+        HttpClient http() => new();
 
         // Act
-        var numChoices = await Snapshot.GetNumChoices(id)
+        var numChoices = await Snapshot.GetNumChoices(http, id)
             .MatchAsync(x => x, _ => throw new System.Exception());
 
         // Assert
@@ -41,9 +44,10 @@ public class SnapshotTests
     {
         // Arrange
         var id = "QmaS9vd1vJKQNBYX4KWQ3nppsTT3QSL3nkz5ZYSwEJk6hZ";
+        HttpClient http() => new();
 
         // Act
-        var votes = await Snapshot.GetVotes(id)
+        var votes = await Snapshot.GetVotes(http, id)
             .MatchAsync(x => x, _ => throw new System.Exception());
         var votium = votes.First();
 

@@ -16,10 +16,15 @@ public static class Alchemy
     /// <summary>
     /// Returns the latest block number.
     /// </summary>
-    public static Func<string, EitherAsync<Error, int>> GetCurrentBlock = fun((string alchemy) =>
+    public static Func<
+            Func<HttpClient>,
+            string,
+        EitherAsync<Error, int>> GetCurrentBlock = fun((
+            Func<HttpClient> httpFactory,
+            string alchemy) =>
         TryAsync(async () =>
         {
-            using var httpClient = new HttpClient();
+            using var httpClient = httpFactory();
 
             var reqParams = new
             {
@@ -51,19 +56,21 @@ public static class Alchemy
     /// Returns all transfers of a pool's tokens to a single admin address.
     /// </summary>
     public static Func<
+            Func<HttpClient>,
             string,
             int,
             Address,
             CurvePool,
             EitherAsync<Error, Lst<Curve.AdminTransfer>>>
         GetTransfersToAdmin = fun((
+            Func<HttpClient> httpFactory,
             string alchemy,
             int endBlock,
             Address adminWallet,
             CurvePool pool) =>
         TryAsync(async () =>
         {
-            using var httpClient = new HttpClient();
+            using var httpClient = httpFactory();
 
             var reqParams = new
             {
@@ -131,18 +138,20 @@ public static class Alchemy
     /// Returns all transfers of a pool's tokens to the admin wallets.
     /// </summary>
     public static Func<
+            Func<HttpClient>,
             string,
             CurvePool,
             EitherAsync<Error, Lst<Curve.AdminTransfer>>>
         GetTransfers = fun((
+            Func<HttpClient> httpFactory,
             string alchemy,
             CurvePool pool) =>
         {
             var adminWallets = new[] { Addresses.Curve.StableSwapProxy, Addresses.Curve.FeeDistributor };
 
-            return GetCurrentBlock(alchemy)
+            return GetCurrentBlock(httpFactory, alchemy)
                 .Bind(currentBlock => adminWallets
-                    .Map(wallet => GetTransfersToAdmin(alchemy, currentBlock, wallet, pool))
+                    .Map(wallet => GetTransfersToAdmin(httpFactory, alchemy, currentBlock, wallet, pool))
                     .SequenceSerial())
                 .Map(x => x.SelectMany(x => x).toList());
         });

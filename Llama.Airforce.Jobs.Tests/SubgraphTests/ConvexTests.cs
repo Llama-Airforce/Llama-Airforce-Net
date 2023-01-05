@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Net.Http;
+using System.Threading.Tasks;
 using Llama.Airforce.Jobs.Subgraphs;
 using Microsoft.Extensions.Configuration;
 using NUnit.Framework;
@@ -23,9 +24,10 @@ public class ConvexTests
     {
         // Arrange
         var graphUrl = Configuration["GRAPH_CONVEX"];
+        HttpClient http() => new();
 
         // Act
-        var data = await Convex.GetPools(graphUrl)
+        var data = await Convex.GetPools(http, graphUrl)
             .MatchAsync(x => x, _ => throw new System.Exception());
 
         // Assert
@@ -39,9 +41,10 @@ public class ConvexTests
     {
         // Arrange
         var graphUrl = Configuration["GRAPH_CONVEX"];
+        HttpClient http() => new();
 
         // Act
-        var data = await Convex.GetDailySnapshots(graphUrl, "seth")
+        var data = await Convex.GetDailySnapshots(http, graphUrl, "seth")
             .MatchAsync(x => x, _ => throw new System.Exception());
 
         // Assert

@@ -116,10 +116,16 @@ public static class Convex
     /// <summary>
     /// Returns the APR of locking CVX tokens. This excludes any bribes.
     /// </summary>
-    public static Func<IWeb3, EitherAsync<Error, double>> GetLockedApr = fun((IWeb3 web3) =>
+    public static Func<
+            Func<HttpClient>,
+            IWeb3,
+            EitherAsync<Error, double>>
+        GetLockedApr = fun((
+            Func<HttpClient> httpFactory, 
+            IWeb3 web3) =>
     {
-        var cvxPrice_ = PriceFunctions.GetPrice(Addresses.Convex.Token, Network.Ethereum, Some(web3));
-        var crvPrice_ = PriceFunctions.GetPrice(Addresses.Curve.Token, Network.Ethereum, Some(web3));
+        var cvxPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Convex.Token, Network.Ethereum, Some(web3));
+        var crvPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Curve.Token, Network.Ethereum, Some(web3));
         var rate_ = GetRewardRate(web3).Map(x => x.RewardRate).DivideByDecimals(CvxDecimals).ToEitherAsync();
         var supply_ = GetBoostedSupply(web3).DivideByDecimals(CvxDecimals).ToEitherAsync();
 
@@ -171,10 +177,16 @@ public static class Convex
     /// <summary>
     /// Returns the APR for single-sided staking of cvxCRV.
     /// </summary>
-    public static Func<IWeb3, EitherAsync<Error, double>> GetCvxCrvApr = fun((IWeb3 web3) =>
+    public static Func<
+            Func<HttpClient>,
+            IWeb3,
+            EitherAsync<Error, double>>
+        GetCvxCrvApr = fun((
+            Func<HttpClient> httpFactory,
+            IWeb3 web3) =>
     {
-        var cvxPrice_ = PriceFunctions.GetPrice(Addresses.Convex.Token, Network.Ethereum, Some(web3));
-        var crvPrice_ = PriceFunctions.GetPrice(Addresses.Curve.Token, Network.Ethereum, Some(web3));
+        var cvxPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Convex.Token, Network.Ethereum, Some(web3));
+        var crvPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Curve.Token, Network.Ethereum, Some(web3));
 
         var rate_ = Curve.GetRewardRate(web3, Addresses.Curve.Staked).DivideByDecimals(CurveDecimals).ToEitherAsync();
         var threeRate_ = Curve.GetRewardRate(web3, Addresses.Curve.ThreePoolStaked).DivideByDecimals(CurveDecimals).ToEitherAsync();
@@ -208,8 +220,14 @@ public static class Convex
     /// <summary>
     /// Returns the total amount of CRV locked into cvxCRV tokens as USD.
     /// </summary>
-    public static Func<IWeb3, EitherAsync<Error, double>> GetLockedCrvUsd = fun((IWeb3 web3) => PriceFunctions
-        .GetPrice(Addresses.Curve.Token, Network.Ethereum, Some(web3))
+    public static Func<
+            Func<HttpClient>,
+            IWeb3,
+            EitherAsync<Error, double>>
+        GetLockedCrvUsd = fun((
+            Func<HttpClient> httpFactory,
+            IWeb3 web3) => PriceFunctions
+        .GetPrice(httpFactory,Addresses.Curve.Token, Network.Ethereum, Some(web3))
         .MapAsync(async crvPrice =>
         {
             var crvLocked = await ERC20.GetTotalSupply(web3, Addresses.CvxCrv.Token).DivideByDecimals(CurveDecimals);

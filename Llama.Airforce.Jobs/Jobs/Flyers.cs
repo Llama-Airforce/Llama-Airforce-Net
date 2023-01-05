@@ -14,6 +14,7 @@ public class Flyers
             ILogger,
             DashboardContext,
             IWeb3,
+            Func<HttpClient>,
             Lst<Db.Convex.Pool>,
             Db.Bribes.Epoch,
             Task>
@@ -21,10 +22,11 @@ public class Flyers
             ILogger logger,
             DashboardContext context,
             IWeb3 web3,
+            Func<HttpClient> httpFactory,
             Lst<Db.Convex.Pool> pools,
             Db.Bribes.Epoch latestFinishedEpoch) =>
         FlyerFactory
-            .CreateFlyerConvex(web3, pools, latestFinishedEpoch)
+            .CreateFlyerConvex(web3, httpFactory, pools, latestFinishedEpoch)
             .MatchAsync(
                 RightAsync: async f =>
                 {
@@ -43,13 +45,15 @@ public class Flyers
             ILogger,
             DashboardContext,
             IWeb3,
+            Func<HttpClient>,
             Task>
         UpdateFlyerAura = fun((
             ILogger logger,
             DashboardContext context,
-            IWeb3 web3) =>
+            IWeb3 web3,
+            Func<HttpClient> httpFactory) =>
         FlyerFactory
-            .CreateFlyerAura(web3)
+            .CreateFlyerAura(web3, httpFactory)
             .MatchAsync(
                 RightAsync: async f =>
                 {

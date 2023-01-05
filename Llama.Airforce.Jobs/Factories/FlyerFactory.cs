@@ -16,22 +16,25 @@ public static class FlyerFactory
 
     public static Func<
             IWeb3,
+            Func<HttpClient>,
             Lst<Db.Convex.Pool>,
             Db.Bribes.Epoch,
             EitherAsync<Error, Db.Convex.Flyer>>
         CreateFlyerConvex = fun((
             IWeb3 web3,
+            Func<HttpClient> httpFactory,
             Lst<Db.Convex.Pool> pools,
             Db.Bribes.Epoch latestFinishedEpoch) =>
         {
             // Coingecko data.
             var caps_ = CoinGecko.GetData(
+                    httpFactory,
                     Addresses.Convex.Token,
                     Network.Ethereum)
                 .Bind(x => CoinGecko.GetMarketCap(x).ToAsync());
 
-            var cvxPrice_ = PriceFunctions.GetPrice(Addresses.Convex.Token, Network.Ethereum, Some(web3));
-            var crvPrice_ = PriceFunctions.GetPrice(Addresses.Curve.Token, Network.Ethereum, Some(web3));
+            var cvxPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Convex.Token, Network.Ethereum, Some(web3));
+            var crvPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Curve.Token, Network.Ethereum, Some(web3));
 
             // Ethereum data.
             var bribeIncomeBiWeekly = latestFinishedEpoch.Bribes.Sum(bribe => bribe.AmountDollars);
@@ -41,11 +44,11 @@ public static class FlyerFactory
                 select cvxBribed == 0 ? 0 : bribeIncomeBiWeekly / cvxBribed / (cvxPrice / 100) * BiWeeksPerYear;
 
             var cvxApr_ =
-                from lockedApr in Convex.GetLockedApr(web3)
+                from lockedApr in Convex.GetLockedApr(httpFactory, web3)
                 from votiumApr in votiumApr_
                 select lockedApr * 100 + votiumApr;
 
-            var cvxCrvApr_ = Convex.GetCvxCrvApr(web3).Map(x => x * 100);
+            var cvxCrvApr_ = Convex.GetCvxCrvApr(httpFactory, web3).Map(x => x * 100);
             var cvxStaked_ = ERC20.GetTotalSupply(web3, Addresses.Convex.Staked).DivideByDecimals(Convex.CvxDecimals)
                 .ToEitherAsync();
             var cvxLocked_ = Convex.GetCvxLocked(web3).DivideByDecimals(Convex.CvxDecimals).ToEitherAsync();
@@ -60,7 +63,7 @@ public static class FlyerFactory
                 from crvLocked in crvLocked_
                 select pools.Sum(pool => pool.Tvl) + (cvxStaked + cvxLocked) * cvxPrice + crvLocked + crvPrice;
 
-            var crvLockedDollars_ = Convex.GetLockedCrvUsd(web3);
+            var crvLockedDollars_ = Convex.GetLockedCrvUsd(httpFactory, web3);
             var revenueMonthly = 535_500_000 / ((DateTime.Now - Convex.Genesis).Days / (365.25 / 12));
 
             var cvxVotingPercentage_ = Curve
@@ -97,12 +100,14 @@ public static class FlyerFactory
 
     public static Func<
             IWeb3,
+            Func<HttpClient>,
             EitherAsync<Error, Db.Aura.Flyer>>
         CreateFlyerAura = fun((
-            IWeb3 web3) =>
+            IWeb3 web3,
+            Func<HttpClient> httpFactory) =>
         {
-            var auraBalApr_ = Aura.GetAuraBalApr(web3).Map(x => x * 100);
-            var auraBalPrice_ = PriceFunctions.GetAuraBalPrice(web3);
+            var auraBalApr_ = Aura.GetAuraBalApr(httpFactory, web3).Map(x => x * 100);
+            var auraBalPrice_ = PriceFunctions.GetAuraBalPrice(httpFactory, web3);
 
             return
                 from auraBalApr in auraBalApr_

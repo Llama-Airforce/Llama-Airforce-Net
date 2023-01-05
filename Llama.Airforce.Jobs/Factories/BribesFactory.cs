@@ -25,49 +25,65 @@ public static class BribesFactory
 
     public record BribesFunctions(
         Func<EitherAsync<Error, Map<string, (int, string)>>> GetProposalIds,
+        Func<string, EitherAsync<Error, Snap.Proposal>> GetProposal,
         Func<EitherAsync<Error, Lst<Dom.Epoch>>> GetEpochs,
+        Func<string, EitherAsync<Error, Lst<Snap.Vote>>> GetVotes,
         Func<Lst<Address>, BigInteger, EitherAsync<Error, Map<Address, double>>> GetScores);
 
     public static Error CreateError((Platform Platform, Protocol Protocol) x) => Error
         .New($"The combination of {x.Platform.ToPlatformString()}-{x.Protocol.ToProtocolString()} is not valid");
 
-    public static BribesFunctions GetBribesFunctions(Platform platform, Protocol protocol) =>
+    public static BribesFunctions GetBribesFunctions(
+        Platform platform,
+        Protocol protocol,
+        Func<HttpClient> httpFactory) =>
         (platform, protocol) switch
         {
             (Platform.Votium, Protocol.ConvexCrv) => new BribesFunctions(
-                Snapshots.Convex.GetProposalIds,
-                Subgraphs.Votium.GetEpochs,
-                Snapshots.Convex.GetScores),
+                Snapshots.Convex.GetProposalIds.Par(httpFactory),
+                Snapshots.Snapshot.GetProposal.Par(httpFactory),
+                Subgraphs.Votium.GetEpochs.Par(httpFactory),
+                Snapshots.Snapshot.GetVotes.Par(httpFactory),
+                Snapshots.Convex.GetScores.Par(httpFactory)),
 
             (Platform.HiddenHand, Protocol.AuraBal) => new BribesFunctions(
-                Snapshots.Aura.GetProposalIds,
-                fun(() => Snapshots.Aura.GetProposalIds()
+                Snapshots.Aura.GetProposalIds.Par(httpFactory),
+                Snapshots.Snapshot.GetProposal.Par(httpFactory),
+                fun(() => Snapshots.Aura.GetProposalIds(httpFactory)
                     .Map(x => x
                         .Values
                         .OrderBy(proposal => proposal.Index)
                         .ToList())
-                    .Bind(Subgraphs.HiddenHand.GetEpochs)),
-                Snapshots.Aura.GetScores),
+                    .Bind(Subgraphs.HiddenHand.GetEpochs.Par(httpFactory))),
+                Snapshots.Snapshot.GetVotes.Par(httpFactory),
+                Snapshots.Aura.GetScores.Par(httpFactory)),
 
             _ => new BribesFunctions(
                 () => EitherAsync<Error, Map<string, (int, string)>>.Left(CreateError((platform, protocol))),
+                _ => EitherAsync<Error, Snap.Proposal>.Left(CreateError((platform, protocol))),
                 () => EitherAsync<Error, Lst<Dom.Epoch>>.Left(CreateError((platform, protocol))),
+                _ => EitherAsync<Error, Lst<Snap.Vote>>.Left(CreateError((platform, protocol))),
                 (_, _) => EitherAsync<Error, Map<Address, double>>.Left(CreateError((platform, protocol))))
         };
 
     public static Func<
             ILogger,
             IWeb3,
+            Func<HttpClient>,
             OptionsGetBribes,
             Func<Snap.Proposal, Address, string, EitherAsync<Error, double>>,
             EitherAsync<Error, Lst<Db.Bribes.Epoch>>>
         GetBribes = fun((
             ILogger logger,
             IWeb3 web3,
+            Func<HttpClient> httpFactory,
             OptionsGetBribes options,
             Func<Snap.Proposal, Address, string, EitherAsync<Error, double>> getPrice) =>
         {
-            var bribeFunctions = GetBribesFunctions(options.Platform, options.Protocol);
+            var bribeFunctions = GetBribesFunctions(
+                options.Platform,
+                options.Protocol,
+                httpFactory);
 
             var proposalIds_ = bribeFunctions.GetProposalIds();
             var epochs_ = bribeFunctions.GetEpochs();
@@ -154,7 +170,7 @@ public static class BribesFactory
                 .ToAsync()
                 .ToEither(Error.New($"Failed to find id for proposal {epoch.SnapshotId}"));
 
-            var proposal_ = proposalId_.Bind(Snapshots.Snapshot.GetProposal);
+            var proposal_ = proposalId_.Bind(options.BribesFunctions.GetProposal);
 
             var bribes_ = proposal_.Bind(proposal => epoch
                 .Bribes
@@ -175,8 +191,8 @@ public static class BribesFactory
                         Choice: (bribe.Choice + 1).ToString()))
                     .toList();
 
-            var votes_ = proposal_.Bind(proposal => Snapshots
-                .Snapshot
+            var votes_ = proposal_.Bind(proposal => options
+                .BribesFunctions
                 .GetVotes(proposal.Id));
 
             var snapshot_ = proposal_.MapTry(proposal => BigInteger.Parse(proposal.Snapshot));

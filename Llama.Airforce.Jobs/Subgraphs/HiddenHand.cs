@@ -21,9 +21,11 @@ public class HiddenHand
     /// Returns Votium epoch & bribe history from The Graph
     /// </summary>
     public static Func<
+            Func<HttpClient>,
             List<(int Index, string Id)>,
             EitherAsync<Error, Lst<Dom.Epoch>>>
         GetEpochs = fun((
+            Func<HttpClient> httpFactory,
             List<(int Index, string Id)> snapshotProposalIds) =>
         snapshotProposalIds
             .Map(x =>
@@ -38,7 +40,7 @@ public class HiddenHand
                 // Generate a mapping for each choice and the corresponding HH proposal id for the subgraph.
                 var choices_ = Snapshots
                     .Snapshot
-                    .GetNumChoices(proposalId)
+                    .GetNumChoices(httpFactory, proposalId)
                     .Map(numChoices => toMap(Enumerable
                         .Range(0, numChoices)
                         .Select(i => (
@@ -65,7 +67,7 @@ proposals(
   }}
 }} }}";
 
-                    return Subgraph.GetData(SUBGRAPH_URL_HIDDENHAND, query)
+                    return Subgraph.GetData(httpFactory, SUBGRAPH_URL_HIDDENHAND, query)
                         .MapTry(JsonConvert.DeserializeObject<RequestEpochsAura>)
                         .MapTry(data =>
                             choices.Map((_, id) => data.Data.ProposalList.Single(proposal => proposal.Id == id)));

@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Net.Http;
+using System.Threading.Tasks;
 using Llama.Airforce.Jobs.Contracts;
 using Llama.Airforce.Jobs.Functions;
 using Microsoft.Extensions.Configuration;
@@ -26,9 +27,10 @@ public class PriceTests
         // Arrange
         var alchemy = Configuration["ALCHEMY"];
         var web3 = new Web3(alchemy);
+        HttpClient http() => new();
 
         // Act
-        var price = await PriceFunctions.GetCurveV2Price(web3, Addresses.ERC20.T)
+        var price = await PriceFunctions.GetCurveV2Price(http, web3, Addresses.ERC20.T)
             .MatchAsync(x => x, _ => throw new System.Exception()); ;
 
         // Assert
@@ -41,9 +43,10 @@ public class PriceTests
         // Arrange
         var alchemy = Configuration["ALCHEMY"];
         var web3 = new Web3(alchemy);
+        HttpClient http() => new();
 
         // Act
-        var price = await PriceFunctions.GetAuraBalPrice(web3)
+        var price = await PriceFunctions.GetAuraBalPrice(http, web3)
             .MatchAsync(x => x, _ => throw new System.Exception()); ;
 
         // Assert

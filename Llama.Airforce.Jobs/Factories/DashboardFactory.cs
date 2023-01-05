@@ -24,12 +24,14 @@ public static class DashboardFactory
     public static Func<
             ILogger,
             IWeb3,
+            Func<HttpClient>,
             VotiumData,
             AuraData,
             EitherAsync<Error, Lst<Database.Dashboard>>>
         CreateDashboards = fun((
             ILogger logger,
             IWeb3 web3,
+            Func<HttpClient> httpFactory,
             VotiumData votiumData,
             AuraData auraData) =>
         {
@@ -37,15 +39,17 @@ public static class DashboardFactory
                 CreateOverviewVotium(
                     logger,
                     web3,
+                    httpFactory,
                     votiumData)
                 .Map(x => (Database.Dashboard)x);
 
             var overviewAura_ =
                 CreateOverviewAura(
-                        logger,
-                        web3,
-                        auraData)
-                    .Map(x => (Database.Dashboard)x);
+                    logger,
+                    web3,
+                    httpFactory,
+                    auraData)
+                .Map(x => (Database.Dashboard)x);
 
             return
                 from overviewVotium in overviewVotium_
@@ -56,19 +60,21 @@ public static class DashboardFactory
     public static Func<
             ILogger,
             IWeb3,
+            Func<HttpClient>,
             VotiumData,
             EitherAsync<Error, Db.Bribes.Dashboards.Overview>>
         CreateOverviewVotium = fun((
             ILogger logger,
             IWeb3 web3,
+            Func<HttpClient> httpFactory,
             VotiumData data) =>
         {
             var totalBribes = data.LatestFinishedEpoch.Bribes.Sum(bribe => bribe.AmountDollars);
             var totalBribed = data.LatestFinishedEpoch.Bribed.Sum(bribed => bribed.Value);
             var dollarPerVlCvx = totalBribes / totalBribed;
 
-            var crvPrice_ = PriceFunctions.GetPrice(Addresses.Curve.Token, Network.Ethereum, Some(web3));
-            var cvxPrice_ = PriceFunctions.GetPrice(Addresses.Convex.Token, Network.Ethereum, Some(web3));
+            var crvPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Curve.Token, Network.Ethereum, Some(web3));
+            var cvxPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Convex.Token, Network.Ethereum, Some(web3));
 
             var cvxPerCrv_ = Convex.GetCvxMintAmount(web3, 1).ToEitherAsync();
             var crvPerDay_ = Curve.GetRate(web3).DivideByDecimals(Convex.CurveDecimals).Map(x => x * 86400).ToEitherAsync();
@@ -127,19 +133,21 @@ public static class DashboardFactory
         public static Func<
             ILogger,
             IWeb3,
+            Func<HttpClient>,
             AuraData,
             EitherAsync<Error, Db.Bribes.Dashboards.Overview>>
         CreateOverviewAura = fun((
             ILogger logger,
             IWeb3 web3,
+            Func<HttpClient> httpFactory,
             AuraData data) =>
         {
             var totalBribes = data.LatestFinishedEpoch.Bribes.Sum(bribe => bribe.AmountDollars);
             var totalBribed = data.LatestFinishedEpoch.Bribed.Sum(bribed => bribed.Value);
             var dollarPerVlAura = totalBribes / totalBribed;
 
-            var balPrice_ = PriceFunctions.GetPrice(Addresses.Balancer.Token, Network.Ethereum, Some(web3));
-            var auraPrice_ = PriceFunctions.GetPrice(Addresses.Aura.Token, Network.Ethereum, Some(web3));
+            var balPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Balancer.Token, Network.Ethereum, Some(web3));
+            var auraPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Aura.Token, Network.Ethereum, Some(web3));
 
             var auraPerBal_ = Aura.GetAuraMintAmount(web3, 1).ToEitherAsync();
             var balPerDay_ = Balancer.GetRate(web3).DivideByDecimals(Aura.BalancerDecimals).Map(x => x * 86400).ToEitherAsync();

@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Net.Http;
+using System.Threading.Tasks;
 using Llama.Airforce.Jobs.Contracts;
 using Llama.Airforce.SeedWork.Types;
 using NUnit.Framework;
@@ -11,9 +12,10 @@ public class CoinGeckoTests
     public async Task GetData()
     {
         // Arrange
+        HttpClient http() => new();
 
         // Act
-        var data = CoinGecko.GetData(Addresses.Convex.Token, Network.Ethereum);
+        var data = CoinGecko.GetData(http, Addresses.Convex.Token, Network.Ethereum);
 
         // Assert
         Assert.IsTrue(await data.IsRight);
@@ -23,7 +25,8 @@ public class CoinGeckoTests
     public async Task GetMarketCap()
     {
         // Arrange
-        var data = CoinGecko.GetData(Addresses.Convex.Token, Network.Ethereum);
+        HttpClient http() => new();
+        var data = CoinGecko.GetData(http, Addresses.Convex.Token, Network.Ethereum);
 
         // Act
         var mcap = data.Bind(x => CoinGecko.GetMarketCap(x).ToAsync());
@@ -36,9 +39,10 @@ public class CoinGeckoTests
     public async Task GetPrice()
     {
         // Arrange
+        HttpClient http() => new();
 
         // Act
-        var price = CoinGecko.GetPrice(Addresses.Convex.Token, Network.Ethereum, Currency.Usd);
+        var price = CoinGecko.GetPrice(http, Addresses.Convex.Token, Network.Ethereum, Currency.Usd);
 
         // Assert
         Assert.IsTrue(await price.IsRight);
@@ -48,9 +52,11 @@ public class CoinGeckoTests
     public async Task GetPriceAtTime()
     {
         // Arrange
+        HttpClient http() => new();
 
         // Act
         var price = await CoinGecko.GetPriceAtTime(
+            http,
             Addresses.Convex.Token,
             Network.Ethereum,
             Currency.Usd,

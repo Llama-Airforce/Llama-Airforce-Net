@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using LanguageExt;
 using Llama.Airforce.Database.Contexts;
@@ -18,17 +19,20 @@ public class Flyers
     private readonly PoolContext ConvexPoolContext;
     private readonly BribesContext BribesContext;
     private readonly DashboardContext DashboardContext;
+    private readonly IHttpClientFactory HttpClientFactory;
 
     public Flyers(
         IWeb3 web3,
         PoolContext convexPoolContext,
         BribesContext bribesContext,
-        DashboardContext dashboardContext)
+        DashboardContext dashboardContext,
+        IHttpClientFactory httpClientFactory)
     {
         Web3 = web3;
         ConvexPoolContext = convexPoolContext;
         BribesContext = bribesContext;
         DashboardContext = dashboardContext;
+        HttpClientFactory = httpClientFactory;
     }
 
     [FunctionName("Flyers")]
@@ -53,12 +57,14 @@ public class Flyers
             log,
             DashboardContext,
             Web3,
+            HttpClientFactory.CreateClient,
             poolsConvex,
             latestFinishedEpoch);
 
         await Jobs.Jobs.Flyers.UpdateFlyerAura(
             log,
             DashboardContext,
-            Web3);
+            Web3,
+            HttpClientFactory.CreateClient);
     }
 }
