@@ -1,6 +1,9 @@
 {
   "version": "2.0",
   "logging": {
+    "LogLevel": {
+      "System.Net.Http.HttpClient": "Warning"
+    },
     "applicationInsights": {
       "samplingSettings": {
         "isEnabled": true,
