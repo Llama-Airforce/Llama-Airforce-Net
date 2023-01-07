@@ -36,6 +36,8 @@ public class HiddenHand
                 // Because of this, the index we calculate is too high, so we need to reduce it.
                 if (proposalIndex == 27)
                     proposalIndex--;
+                if (proposalIndex == 70)
+                    proposalIndex = 66;
 
                 // Generate a mapping for each choice and the corresponding HH proposal id for the subgraph.
                 var choices_ = Snapshots

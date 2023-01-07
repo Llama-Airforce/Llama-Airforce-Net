@@ -31,7 +31,7 @@ public class BribeFactoryTests
 
     [Test]
     [TestCase(Platform.Votium, Protocol.ConvexCrv, 275218.498948121, 4073133.7953767194, 7405670.9515354205)]
-    [TestCase(Platform.HiddenHand, Protocol.AuraBal, 5111.9299885981391, 326374.53677203262, 757590.84303675336)]
+    [TestCase(Platform.HiddenHand, Protocol.AuraBal, 5111.9299885981391, 326496.26531737653, 757590.84303675336)]
     public async Task ProcessEpoch(
         Platform platform,
         Protocol protocol,
