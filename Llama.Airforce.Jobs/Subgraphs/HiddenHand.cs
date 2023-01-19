@@ -22,22 +22,34 @@ public class HiddenHand
     /// </summary>
     public static Func<
             Func<HttpClient>,
+            int,
             List<(int Index, string Id)>,
             EitherAsync<Error, Lst<Dom.Epoch>>>
         GetEpochs = fun((
             Func<HttpClient> httpFactory,
+            int version,
             List<(int Index, string Id)> snapshotProposalIds) =>
         snapshotProposalIds
             .Map(x =>
             {
                 var (proposalIndex, proposalId) = x;
 
-                // HiddenHand messed something up and had to restart the proposal.
-                // Because of this, the index we calculate is too high, so we need to reduce it.
-                if (proposalIndex == 27)
-                    proposalIndex--;
-                if (proposalIndex == 70)
-                    proposalIndex = 66;
+                switch (version)
+                {
+                    case 1:
+                    {
+                        // HiddenHand messed something up and had to restart the proposal.
+                        // Because of this, the index we calculate is too high, so we need to reduce it.
+                        if (proposalIndex == 27)
+                            proposalIndex--;
+                        if (proposalIndex == 70)
+                            proposalIndex = 66;
+                        break;
+                    }
+                    case 2:
+                        proposalIndex += 1000000;
+                        break;
+                }
 
                 // Generate a mapping for each choice and the corresponding HH proposal id for the subgraph.
                 var choices_ = Snapshots

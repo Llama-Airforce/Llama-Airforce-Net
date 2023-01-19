@@ -36,7 +36,8 @@ public static class BribesFactory
     public static BribesFunctions GetBribesFunctions(
         Platform platform,
         Protocol protocol,
-        Func<HttpClient> httpFactory) =>
+        Func<HttpClient> httpFactory,
+        int auraVersion) =>
         (platform, protocol) switch
         {
             (Platform.Votium, Protocol.ConvexCrv) => new BribesFunctions(
@@ -47,16 +48,16 @@ public static class BribesFactory
                 Snapshots.Convex.GetScores.Par(httpFactory)),
 
             (Platform.HiddenHand, Protocol.AuraBal) => new BribesFunctions(
-                Snapshots.Aura.GetProposalIds.Par(httpFactory),
+                Snapshots.Aura.GetProposalIds.Par(httpFactory).Par(auraVersion),
                 Snapshots.Snapshot.GetProposal.Par(httpFactory),
-                fun(() => Snapshots.Aura.GetProposalIds(httpFactory)
+                fun(() => Snapshots.Aura.GetProposalIds(httpFactory, auraVersion)
                     .Map(x => x
                         .Values
                         .OrderBy(proposal => proposal.Index)
                         .ToList())
-                    .Bind(Subgraphs.HiddenHand.GetEpochs.Par(httpFactory))),
+                    .Bind(Subgraphs.HiddenHand.GetEpochs.Par(httpFactory).Par(auraVersion))),
                 Snapshots.Snapshot.GetVotes.Par(httpFactory),
-                Snapshots.Aura.GetScores.Par(httpFactory)),
+                Snapshots.Aura.GetScores.Par(httpFactory).Par(auraVersion)),
 
             _ => new BribesFunctions(
                 () => EitherAsync<Error, Map<string, (int, string)>>.Left(CreateError((platform, protocol))),
@@ -80,10 +81,15 @@ public static class BribesFactory
             OptionsGetBribes options,
             Func<Snap.Proposal, Address, string, EitherAsync<Error, double>> getPrice) =>
         {
+            // Aura moved to a new gauge location and new proposalIndex offset starting at 1 million
+            // This constant is so that when needed, we can rerun the code for the older version.
+            const int AURA_VERSION = 2;
+
             var bribeFunctions = GetBribesFunctions(
                 options.Platform,
                 options.Protocol,
-                httpFactory);
+                httpFactory,
+                AURA_VERSION);
 
             var proposalIds_ = bribeFunctions.GetProposalIds();
             var epochs_ = bribeFunctions.GetEpochs();

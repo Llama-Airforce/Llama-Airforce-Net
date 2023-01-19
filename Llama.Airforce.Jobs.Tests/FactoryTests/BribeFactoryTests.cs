@@ -43,6 +43,7 @@ public class BribeFactoryTests
         var alchemy = Configuration["ALCHEMY"];
         var web3 = new Web3(alchemy);
         HttpClient http() => new();
+        const int AURA_VERSION = 1;
         var logger = new LoggerFactory().CreateLogger("test");
         var getPrice = fun((Proposal proposal, Address tokenAddress, string token) =>
         {
@@ -62,7 +63,7 @@ public class BribeFactoryTests
         });
 
         // Act
-        var bribeFunctions = BribesFactory.GetBribesFunctions(platform, protocol, http);
+        var bribeFunctions = BribesFactory.GetBribesFunctions(platform, protocol, http, AURA_VERSION);
 
         var proposalIds = await bribeFunctions.GetProposalIds()
             .MatchAsync(x => x, _ => throw new Exception());
