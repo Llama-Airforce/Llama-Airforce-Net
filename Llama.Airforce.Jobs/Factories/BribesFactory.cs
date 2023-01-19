@@ -21,7 +21,8 @@ public static class BribesFactory
     public record OptionsGetBribes(
         Platform Platform,
         Protocol Protocol,
-        bool LastEpochOnly);
+        bool LastEpochOnly,
+        int AuraVersion);
 
     public record BribesFunctions(
         Func<EitherAsync<Error, Map<string, (int, string)>>> GetProposalIds,
@@ -36,8 +37,8 @@ public static class BribesFactory
     public static BribesFunctions GetBribesFunctions(
         Platform platform,
         Protocol protocol,
-        Func<HttpClient> httpFactory,
-        int auraVersion) =>
+        int auraVersion,
+        Func<HttpClient> httpFactory) =>
         (platform, protocol) switch
         {
             (Platform.Votium, Protocol.ConvexCrv) => new BribesFunctions(
@@ -81,18 +82,23 @@ public static class BribesFactory
             OptionsGetBribes options,
             Func<Snap.Proposal, Address, string, EitherAsync<Error, double>> getPrice) =>
         {
-            // Aura moved to a new gauge location and new proposalIndex offset starting at 1 million
-            // This constant is so that when needed, we can rerun the code for the older version.
-            const int AURA_VERSION = 2;
-
             var bribeFunctions = GetBribesFunctions(
                 options.Platform,
                 options.Protocol,
-                httpFactory,
-                AURA_VERSION);
+                options.AuraVersion,
+                httpFactory);
 
             var proposalIds_ = bribeFunctions.GetProposalIds();
             var epochs_ = bribeFunctions.GetEpochs();
+
+            // Fix aura resetting their round indices back to 1 because they moved to a new snapshot space.
+            var indexOffset = 0;
+            if (options.Protocol == Protocol.AuraBal
+                && options.Platform == Platform.HiddenHand
+                && options.AuraVersion == 2)
+            {
+                indexOffset = 15;
+            }
 
             EitherAsync<Error, EitherAsync<Error, Lst<Db.Bribes.Epoch>>> dbEpochs;
             if (options.LastEpochOnly)
@@ -112,7 +118,7 @@ public static class BribesFactory
                                 options.Protocol,
                                 proposalIds,
                                 epoch,
-                            epochs.Count - 1),
+                            epochs.Count - 1 + indexOffset),
                             getPrice))
                         .SequenceSerial()
                         .Map(toList);
@@ -132,7 +138,7 @@ public static class BribesFactory
                                 options.Protocol,
                                 proposalIds,
                                 epoch,
-                                i),
+                                i + indexOffset),
                             getPrice))
                         .SequenceSerial()
                         .Map(toList);

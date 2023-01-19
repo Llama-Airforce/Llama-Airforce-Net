@@ -63,7 +63,7 @@ public class BribeFactoryTests
         });
 
         // Act
-        var bribeFunctions = BribesFactory.GetBribesFunctions(platform, protocol, http, AURA_VERSION);
+        var bribeFunctions = BribesFactory.GetBribesFunctions(platform, protocol, AURA_VERSION, http);
 
         var proposalIds = await bribeFunctions.GetProposalIds()
             .MatchAsync(x => x, _ => throw new Exception());

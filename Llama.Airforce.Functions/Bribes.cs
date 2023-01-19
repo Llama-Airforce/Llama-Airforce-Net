@@ -37,6 +37,10 @@ public class Bribes
     {
         var lastEpochOnly = Config.GetValue<bool>("LastEpochOnly");
 
+        // Aura moved to a new gauge location and new proposalIndex offset starting at 1 million
+        // This constant is so that when needed, we can rerun the code for the older version.
+        const int AURA_VERSION = 2;
+
         await Jobs.Jobs.Bribes.UpdateBribes(
             log,
             BribesContext,
@@ -45,7 +49,8 @@ public class Bribes
             new BribesFactory.OptionsGetBribes(
                 Platform.Votium,
                 Protocol.ConvexCrv,
-                lastEpochOnly),
+                lastEpochOnly,
+                AURA_VERSION),
             None);
 
         await Jobs.Jobs.Bribes.UpdateBribes(
@@ -56,7 +61,8 @@ public class Bribes
             new BribesFactory.OptionsGetBribes(
                 Platform.HiddenHand,
                 Protocol.AuraBal,
-                lastEpochOnly),
+                lastEpochOnly,
+                AURA_VERSION),
             None);
     }
 }
