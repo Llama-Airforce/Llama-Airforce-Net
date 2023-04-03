@@ -5,6 +5,7 @@ using LanguageExt.UnsafeValueAccess;
 using Llama.Airforce.Database.Models.Bribes;
 using Llama.Airforce.Domain.Models;
 using Llama.Airforce.Jobs.Extensions;
+using Llama.Airforce.Jobs.Snapshots.Models;
 using Llama.Airforce.SeedWork.Extensions;
 using Llama.Airforce.SeedWork.Types;
 using Microsoft.Extensions.Logging;
@@ -290,6 +291,12 @@ public static class BribesFactory
             Func<Address, string, EitherAsync<Error, double>> getPrice,
             Dom.Bribe bribe) =>
         {
+            // Fixup for Winthorpe bribing the old cvxCRV pool instead of the new one.
+            // Convert bribes for old cvxCRV pool to the new one.
+            if (proposal.Id == "0x468f191c6c2e35ef6fdddbb1b05d691c29ca9a98730964de1e84b110164cddf9")
+                if (bribe.Choice == 31)
+                    bribe = bribe with { Choice = 140 };
+
             var tokenAddress = Address.Of(bribe.Token);
             var token_ = Contracts.ERC20.GetSymbol(web3, tokenAddress).ToEitherAsync();
             var decimals_ = Contracts.ERC20.GetDecimals(web3, tokenAddress).ToEitherAsync();
