@@ -5,7 +5,6 @@ using LanguageExt.UnsafeValueAccess;
 using Llama.Airforce.Database.Models.Bribes;
 using Llama.Airforce.Domain.Models;
 using Llama.Airforce.Jobs.Extensions;
-using Llama.Airforce.Jobs.Snapshots.Models;
 using Llama.Airforce.SeedWork.Extensions;
 using Llama.Airforce.SeedWork.Types;
 using Microsoft.Extensions.Logging;
@@ -185,13 +184,25 @@ public static class BribesFactory
 
             var proposal_ = proposalId_.Bind(options.BribesFunctions.GetProposal);
 
-            var bribes_ = proposal_.Bind(proposal => epoch
-                .Bribes
-                // Process each bribe.
-                .Map(par(ProcessBribe, logger, web3, proposal, par(getPrice, proposal)))
-                // Transform the list of tasks to a task of a list.
-                .SequenceSerial()
-                .Map(toList));
+            var bribes_ = proposal_.Bind(proposal =>
+            {
+                var bribes = epoch.Bribes.ToList();
+
+                // Fixup for Winthorpe bribing the old cvxCRV pool instead of the new one.
+                // Add a new virtual bribe after the fact that copies the old pool bribe to the new one.
+                if (proposal.Id == "0x468f191c6c2e35ef6fdddbb1b05d691c29ca9a98730964de1e84b110164cddf9")
+                    bribes.Add(new Dom.Bribe(
+                        140,
+                        "0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b",
+                        "4800000000000000000000"));
+
+                return bribes
+                    // Process each bribe.
+                    .Map(par(ProcessBribe, logger, web3, proposal, par(getPrice, proposal)))
+                    // Transform the list of tasks to a task of a list.
+                    .SequenceSerial()
+                    .Map(toList);
+            });
 
             var bribeChoices_ =
                 from proposal in proposal_
@@ -291,12 +302,6 @@ public static class BribesFactory
             Func<Address, string, EitherAsync<Error, double>> getPrice,
             Dom.Bribe bribe) =>
         {
-            // Fixup for Winthorpe bribing the old cvxCRV pool instead of the new one.
-            // Convert bribes for old cvxCRV pool to the new one.
-            if (proposal.Id == "0x468f191c6c2e35ef6fdddbb1b05d691c29ca9a98730964de1e84b110164cddf9")
-                if (bribe.Choice == 31)
-                    bribe = bribe with { Choice = 140 };
-
             var tokenAddress = Address.Of(bribe.Token);
             var token_ = Contracts.ERC20.GetSymbol(web3, tokenAddress).ToEitherAsync();
             var decimals_ = Contracts.ERC20.GetDecimals(web3, tokenAddress).ToEitherAsync();
