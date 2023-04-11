@@ -158,6 +158,55 @@ votes(
                     .MapTry(x => toList(x.Data.VoteList));
             });
 
-            return fs.Paginate();
+            return fs.Paginate().Map(votes =>
+            {
+                // Fix for HiddenHand fucking up their vote in Aura round 21.
+                // It was added later manually, hence we hardcode this vote in.
+                // https://snapshot.org/#/aurafinance.eth/proposal/0x051e501623ca3f97d1131b04ae55201ed0f4226c523ac9acebc96a7c4c5c823d
+                if (id == "0xdf8a01486bd5e3a8c11b161f2a43f7295b0cd4ff257d5de95e485512287157b3")
+                    votes += VOTE_HH;
+
+                return votes;
+            });
         });
+
+    public static Vote VOTE_HH = new()
+    {
+        Voter = "0x3CdE8FA1c73AfE0828f672D197e082463C2aC8e2",
+        Choices = new Dictionary<string, double>
+        {
+            { "34", 1003664 },
+            { "10", 797362 },
+            { "3", 735059 },
+            { "50", 595202 },
+            { "41", 505444 },
+            { "30", 178861 },
+            { "46", 153029 },
+            { "39", 132059 },
+            { "63", 130284 },
+            { "57", 115001 },
+            { "12", 114928 },
+            { "42", 97179 },
+            { "2", 87768 },
+            { "52", 78816 },
+            { "62", 72466 },
+            { "51", 66378 },
+            { "53", 50156 },
+            { "72", 41716 },
+            { "58", 37209 },
+            { "49", 33585 },
+            { "75", 29596 },
+            { "74", 29376 },
+            { "25", 26741 },
+            { "69", 24724 },
+            { "29", 24521 },
+            { "73", 23503 },
+            { "77", 20734 },
+            { "78", 13528 },
+            { "66", 10177 },
+            { "54", 9735 },
+            { "86", 8117 },
+            { "56", 689 },
+        }
+    };
 }
