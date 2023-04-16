@@ -36,10 +36,22 @@ public static class PriceFunctions
         {
             "USDM" => SomeAsync(1.0),
             "BB-A-USD" => SomeAsync(1.0),
-            "T" => web3.Match(w => GetCurveV2Price(httpFactory, w, Addresses.ERC20.T).ToOption(), () => None),
-            "eCFX" => web3.Match(w => GetCurveV2Price(httpFactory, w, Addresses.ERC20.eCFX).ToOption(), () => None),
+            "T" => web3.Match(w => GetCurveV2Price(httpFactory, w, Addresses.ERC20.T, None).ToOption(), () => None),
+            "eCFX" => web3.Match(w => GetCurveV2Price(httpFactory, w, Addresses.ERC20.eCFX, None).ToOption(), () => None),
+            "sdFXS" => web3.Match(w =>
+                GetCurveV1Price(httpFactory, w, Addresses.ERC20.sdFXS, Addresses.ERC20.FXS, true).ToOption(),
+                () => None),
             _ => None
         });
+
+    /// <summary>
+    /// Mapping for tokens and their respective ETH LP pair for Curve V1.
+    /// </summary>
+    public static Func<Address, Option<Address>> CurveV1LpAddress = fun((Address token) => token.Value switch
+    {
+        not null when token.Equals(Addresses.ERC20.sdFXS) => Some(Addresses.CurveV1LP.FXSsdFXS),
+        _ => None
+    });
 
     /// <summary>
     /// Mapping for tokens and their respective ETH LP pair for Curve V2.
@@ -113,6 +125,40 @@ public static class PriceFunctions
             Network network,
             Option<IWeb3> web3) => GetPriceExt(httpFactory, address, network, web3, None, None));
 
+        /// <summary>
+    /// Returns the current price in dollars for a token by looking at its ETH Curve V2 LP.
+    /// </summary>
+    public static Func<
+            Func<HttpClient>,
+            IWeb3,
+            Address,
+            Option<Address>,
+            bool,
+            EitherAsync<Error, double>>
+        GetCurveV1Price = fun((
+            Func<HttpClient> httpFactory,
+            IWeb3 web3,
+            Address token,
+            Option<Address> tokenOther,
+            bool flip) =>
+        {
+            var priceOther_ = GetPriceExt(
+                httpFactory,
+                tokenOther.IfNone(Addresses.ERC20.WETH),
+                Network.Ethereum,
+                Some(web3),
+                None,
+                None);
+
+            var lpToken_ = CurveV1LpAddress(token).ToEitherAsync(Error.New($"No Curve V1 LP found for {token}"));
+            var discount_ = lpToken_.Bind(x => Curve.GetDiscountV1(web3, x, flip).ToEitherAsync());
+
+            return
+                from priceOther in priceOther_
+                from discount in discount_
+                select priceOther * discount;
+        });
+
     /// <summary>
     /// Returns the current price in dollars for a token by looking at its ETH Curve V2 LP.
     /// </summary>
@@ -120,30 +166,39 @@ public static class PriceFunctions
             Func<HttpClient>,
             IWeb3,
             Address,
+            Option<Address>,
             EitherAsync<Error, double>>
         GetCurveV2Price = fun((
             Func<HttpClient> httpFactory,
             IWeb3 web3,
-            Address token) =>
-    {
-        var weth_ = GetPriceExt(httpFactory, Addresses.ERC20.WETH, Network.Ethereum, Some(web3), None, "WETH");
-        var decimals_ = ERC20.GetDecimals(web3, token).ToEitherAsync();
-        var lpToken_ = CurveV2LpAddress(token).ToEitherAsync(Error.New($"No Curve V2 LP found for {token}"));
+            Address token,
+            Option<Address> tokenOther) =>
+        {
+            var priceOther_ = GetPriceExt(
+                httpFactory,
+                tokenOther.IfNone(Addresses.ERC20.WETH),
+                Network.Ethereum,
+                Some(web3),
+                None,
+                None);
 
-        var price_ = (
-            from lpToken in lpToken_
-            from decimals in decimals_
-            select Curve
-                .GetPriceOracle(web3, lpToken)
-                .DivideByDecimals(decimals)
-                .ToEitherAsync())
-            .Bind(x => x);
+            var decimals_ = ERC20.GetDecimals(web3, token).ToEitherAsync();
+            var lpToken_ = CurveV2LpAddress(token).ToEitherAsync(Error.New($"No Curve V2 LP found for {token}"));
 
-        return
-            from price in price_
-            from weth in weth_
-            select price * weth;
-    });
+            var price_ = (
+                    from lpToken in lpToken_
+                    from decimals in decimals_
+                    select Curve
+                        .GetPriceOracle(web3, lpToken)
+                        .DivideByDecimals(decimals)
+                        .ToEitherAsync())
+                .Bind(x => x);
+
+            return
+                from price in price_
+                from priceOther in priceOther_
+                select price * priceOther;
+        });
 
     public static Func<
             Func<HttpClient>,

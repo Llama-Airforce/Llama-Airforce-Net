@@ -9,6 +9,8 @@ public static class Addresses
         public static Address WETH = Address.Of("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
         public static Address T = Address.Of("0xcdf7028ceab81fa0c6971208e83fa7872994bee5");
         public static Address eCFX = Address.Of("0xa1f82e14bc09a1b42710df1a8a999b62f294e592");
+        public static Address sdFXS = Address.Of("0x402f878bdd1f5c66fdaf0fababcf74741b68ac36");
+        public static Address FXS = Address.Of("0x3432b6a60d23ca0dfca7761b7ab56459d9c964d0");
     }
 
     public static class Curve
@@ -45,6 +47,11 @@ public static class Addresses
     {
         public static Address Token = Address.Of("0x62B9c7356A2Dc64a1969e19C23e4f579F9810Aa7");
         public static Address Staked = Address.Of("0x3Fe65692bfCD0e6CF84cB1E7d24108E434A7587e");
+    }
+
+    public static class CurveV1LP
+    {
+        public static Address FXSsdFXS = Address.Of("0x8c524635d52bd7b1bd55e062303177a7d916c046");
     }
 
     public static class CurveV2LP

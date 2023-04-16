@@ -1,9 +1,11 @@
-﻿using Llama.Airforce.SeedWork.Types;
+﻿using System.Numerics;
+using LanguageExt;
+using LanguageExt.UnitsOfMeasure;
+using Llama.Airforce.SeedWork.Types;
 using Nethereum.ABI.FunctionEncoding.Attributes;
 using Nethereum.Contracts;
 using Nethereum.Util;
 using Nethereum.Web3;
-using System.Numerics;
 using static LanguageExt.Prelude;
 
 namespace Llama.Airforce.Jobs.Contracts;
@@ -26,6 +28,19 @@ public static class Curve
 
     [Function("price_oracle", "uint256")]
     private class PriceOracleFunction : FunctionMessage { }
+
+    [Function("get_dy", "uint256")]
+    private class GetDyV1Function : FunctionMessage
+    {
+        [Parameter("int128", 1)]
+        public BigInteger i { get; set; }
+
+        [Parameter("int128", 2)]
+        public BigInteger j { get; set; }
+
+        [Parameter("uint256", 3)]
+        public BigInteger dx { get; set; }
+    }
 
     #endregion
 
@@ -74,6 +89,22 @@ public static class Curve
         .Eth
         .GetContractQueryHandler<PriceOracleFunction>()
         .QueryAsync<BigInteger>(lpToken, new PriceOracleFunction()));
+
+    /// <summary>
+    /// Gets the discount for Curve v1 pools.
+    /// </summary>
+    public static Func<IWeb3, Address, bool, Task<double>> GetDiscountV1 = fun((IWeb3 web3, Address lpToken, bool flip) => web3
+        .Eth
+        .GetContractQueryHandler<GetDyV1Function>()
+        .QueryAsync<BigInteger>(lpToken, new GetDyV1Function
+        {
+            i = flip ? 1 : 0, j = flip ? 0 : 1, dx = new BigInteger(Math.Pow(10, 21))
+        })
+        .Map(tknOut =>
+        {
+            var discount = 1.0 - (double)((BigDecimal)(tknOut - new BigInteger(Math.Pow(10, 21))) / tknOut);
+            return flip ? 1 / discount : discount;
+        }));
 
     public class AdminTransfer
     {
