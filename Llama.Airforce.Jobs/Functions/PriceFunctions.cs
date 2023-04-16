@@ -37,6 +37,7 @@ public static class PriceFunctions
             "USDM" => SomeAsync(1.0),
             "BB-A-USD" => SomeAsync(1.0),
             "T" => web3.Match(w => GetCurveV2Price(httpFactory, w, Addresses.ERC20.T).ToOption(), () => None),
+            "eCFX" => web3.Match(w => GetCurveV2Price(httpFactory, w, Addresses.ERC20.eCFX).ToOption(), () => None),
             _ => None
         });
 
@@ -46,6 +47,7 @@ public static class PriceFunctions
     public static Func<Address, Option<Address>> CurveV2LpAddress = fun((Address token) => token.Value switch
     {
         not null when token.Equals(Addresses.ERC20.T) => Some(Addresses.CurveV2LP.TETH),
+        not null when token.Equals(Addresses.ERC20.eCFX) => Some(Addresses.CurveV2LP.eCFXETH),
         _ => None
     });
 

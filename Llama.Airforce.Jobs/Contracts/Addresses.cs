@@ -8,6 +8,7 @@ public static class Addresses
     {
         public static Address WETH = Address.Of("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
         public static Address T = Address.Of("0xcdf7028ceab81fa0c6971208e83fa7872994bee5");
+        public static Address eCFX = Address.Of("0xa1f82e14bc09a1b42710df1a8a999b62f294e592");
     }
 
     public static class Curve
@@ -49,6 +50,7 @@ public static class Addresses
     public static class CurveV2LP
     {
         public static Address TETH = Address.Of("0x752eBeb79963cf0732E9c0fec72a49FD1DEfAEAC");
+        public static Address eCFXETH = Address.Of("0x5ac4fcee123dcadfae22bc814c4cc72b96c93f38");
     }
 
     public static class HiddenHand
