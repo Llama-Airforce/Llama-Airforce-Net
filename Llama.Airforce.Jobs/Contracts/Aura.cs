@@ -16,7 +16,7 @@ public static class Aura
 {
     public static int AuraDecimals = 18;
     public static int BalancerDecimals = 18;
-    public static double RewardFee = 0.17;
+    public static double RewardFee = 0.25;
 
     #region Function Messages
 
