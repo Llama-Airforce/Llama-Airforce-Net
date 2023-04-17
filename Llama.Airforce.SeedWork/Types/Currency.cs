@@ -13,12 +13,12 @@ public sealed class Currency : StringMax
     {
     }
 
-    public static new Option<Currency> Of(string value)
+    public new static Option<Currency> Of(string value)
         => IsValid(value)
             ? Some(new Currency(value.ToLower()))
             : None;
 
-    public static new bool IsValid(string value) => StringMax.IsValid(value);
+    public new static bool IsValid(string value) => StringMax.IsValid(value);
 
     public override string ToString() => this.Value;
 

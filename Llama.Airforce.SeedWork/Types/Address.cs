@@ -20,7 +20,7 @@ public sealed class Address : StringOfLength, IComparable<Address>
         => !string.IsNullOrWhiteSpace(value)
             && value.Length == 42;
 
-    public int CompareTo(Address other) => other.Value.CompareTo(this.Value);
+    public int CompareTo(Address other) => string.Compare(other.Value, this.Value, StringComparison.Ordinal);
 
     public static implicit operator Address(Option<Address> x) => x.ValueUnsafe();
 }

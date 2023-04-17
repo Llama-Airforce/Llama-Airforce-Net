@@ -93,12 +93,8 @@ public static class BribesFactory
 
             // Fix aura resetting their round indices back to 1 because they moved to a new snapshot space.
             var indexOffset = 0;
-            if (options.Protocol == Protocol.AuraBal
-                && options.Platform == Platform.HiddenHand
-                && options.AuraVersion == 2)
-            {
+            if (options is { Protocol: Protocol.AuraBal, Platform: Platform.HiddenHand, AuraVersion: 2 })
                 indexOffset = 15;
-            }
 
             EitherAsync<Error, EitherAsync<Error, Lst<Db.Bribes.Epoch>>> dbEpochs;
             if (options.LastEpochOnly)

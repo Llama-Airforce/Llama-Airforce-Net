@@ -32,7 +32,7 @@ public class PriceTests
 
         // Act
         var price = await PriceFunctions.GetCurveV1Price(http, web3, Addresses.ERC20.sdFXS, Addresses.ERC20.FXS, true)
-            .MatchAsync(x => x, _ => throw new System.Exception()); ;
+            .MatchAsync(x => x, _ => throw new System.Exception());
 
         // Assert
         Assert.IsTrue(price > 0.01);
@@ -48,7 +48,7 @@ public class PriceTests
 
         // Act
         var price = await PriceFunctions.GetCurveV2Price(http, web3, Addresses.ERC20.T, None)
-            .MatchAsync(x => x, _ => throw new System.Exception()); ;
+            .MatchAsync(x => x, _ => throw new System.Exception());
 
         // Assert
         Assert.IsTrue(price > 0.01);
@@ -64,7 +64,7 @@ public class PriceTests
 
         // Act
         var price = await PriceFunctions.GetAuraBalPrice(http, web3)
-            .MatchAsync(x => x, _ => throw new System.Exception()); ;
+            .MatchAsync(x => x, _ => throw new System.Exception());
 
         // Assert
         Assert.IsTrue(price > 0.01);

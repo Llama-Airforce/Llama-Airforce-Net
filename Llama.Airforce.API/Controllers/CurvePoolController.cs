@@ -22,7 +22,7 @@ public class CurvePoolController : ControllerBase
 
         return new JsonResult(new
         {
-            pools = pools
+            pools
         });
     }
 }

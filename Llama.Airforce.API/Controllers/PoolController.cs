@@ -22,7 +22,7 @@ public class PoolController : ControllerBase
 
         return new JsonResult(new
         {
-            pools = pools
+            pools
         });
     }
 }

@@ -22,7 +22,7 @@ public class CurvePoolRatiosController : ControllerBase
 
         return new JsonResult(new
         {
-            ratios = ratios
+            ratios
         });
     }
 }
