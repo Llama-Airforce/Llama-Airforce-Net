@@ -1,12 +1,8 @@
-using System;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
 using LanguageExt;
 using Llama.Airforce.Database.Contexts;
 using Llama.Airforce.Domain.Models;
 using Llama.Airforce.Jobs.Extensions;
-using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Nethereum.Web3;
 using static LanguageExt.Prelude;
@@ -15,6 +11,7 @@ namespace Llama.Airforce.Functions;
 
 public class Flyers
 {
+    private readonly ILogger Logger;
     private readonly IWeb3 Web3;
     private readonly PoolContext ConvexPoolContext;
     private readonly BribesContext BribesContext;
@@ -22,12 +19,14 @@ public class Flyers
     private readonly IHttpClientFactory HttpClientFactory;
 
     public Flyers(
+        ILoggerFactory loggerFactory,
         IWeb3 web3,
         PoolContext convexPoolContext,
         BribesContext bribesContext,
         DashboardContext dashboardContext,
         IHttpClientFactory httpClientFactory)
     {
+        Logger = loggerFactory.CreateLogger<Flyers>();
         Web3 = web3;
         ConvexPoolContext = convexPoolContext;
         BribesContext = bribesContext;
@@ -35,10 +34,9 @@ public class Flyers
         HttpClientFactory = httpClientFactory;
     }
 
-    [FunctionName("Flyers")]
+    [Function("Flyers")]
     public async Task Run(
-        [TimerTrigger("0 */15 * * * *", RunOnStartup = false)] TimerInfo flyerTimer,
-        ILogger log)
+        [TimerTrigger("0 */15 * * * *", RunOnStartup = false)] TimerInfo flyerTimer)
     {
         var poolsConvex = await ConvexPoolContext
             .GetAllAsync()
@@ -54,7 +52,7 @@ public class Flyers
             .Last(epoch => epoch.End <= DateTime.UtcNow.ToUnixTimeSeconds());
 
         await Jobs.Jobs.Flyers.UpdateFlyerConvex(
-            log,
+            Logger,
             DashboardContext,
             Web3,
             HttpClientFactory.CreateClient,
@@ -62,7 +60,7 @@ public class Flyers
             latestFinishedEpoch);
 
         await Jobs.Jobs.Flyers.UpdateFlyerAura(
-            log,
+            Logger,
             DashboardContext,
             Web3,
             HttpClientFactory.CreateClient);

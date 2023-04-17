@@ -1,13 +1,9 @@
-using System;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
 using LanguageExt;
 using Llama.Airforce.Database.Contexts;
 using Llama.Airforce.Domain.Models;
 using Llama.Airforce.Jobs.Extensions;
 using Llama.Airforce.Jobs.Factories;
-using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Nethereum.Web3;
 using static LanguageExt.Prelude;
@@ -16,27 +12,29 @@ namespace Llama.Airforce.Functions;
 
 public class Dashboards
 {
+    private readonly ILogger Logger;
     private readonly IWeb3 Web3;
     private readonly BribesContext BribesContext;
     private readonly DashboardContext DashboardContext;
     private readonly IHttpClientFactory HttpClientFactory;
 
     public Dashboards(
+        ILoggerFactory loggerFactory,
         IWeb3 web3,
         BribesContext bribesContext,
         DashboardContext dashboardContext,
         IHttpClientFactory httpClientFactory)
     {
+        Logger = loggerFactory.CreateLogger<Dashboards>();
         Web3 = web3;
         BribesContext = bribesContext;
         DashboardContext = dashboardContext;
         HttpClientFactory = httpClientFactory;
     }
 
-    [FunctionName("Dashboards")]
+    [Function("Dashboards")]
     public async Task Run(
-        [TimerTrigger("0 */15 * * * *", RunOnStartup = false)] TimerInfo dashboardsTimer,
-        ILogger log)
+        [TimerTrigger("0 */15 * * * *", RunOnStartup = false)] TimerInfo dashboardsTimer)
     {
         // Get Votium data.
         var epochsVotium = await BribesContext
@@ -69,7 +67,7 @@ public class Dashboards
             latestFinishedEpochAura);
 
         await Jobs.Jobs.Dashboards.UpdateDashboards(
-            log,
+            Logger,
             Web3,
             HttpClientFactory.CreateClient,
             DashboardContext,

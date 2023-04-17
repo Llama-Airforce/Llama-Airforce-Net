@@ -1,15 +1,14 @@
 using Llama.Airforce.Database.Contexts;
-using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using System.Net.Http;
-using System.Threading.Tasks;
 using static LanguageExt.Prelude;
 
 namespace Llama.Airforce.Functions;
 
 public class CurvePools
 {
+    private readonly ILogger Logger;
     private readonly IConfiguration Config;
     private readonly CurvePoolContext CurvePoolContext;
     private readonly CurvePoolSnapshotsContext CurvePoolSnapshotsContext;
@@ -17,12 +16,14 @@ public class CurvePools
     private readonly IHttpClientFactory HttpClientFactory;
 
     public CurvePools(
+        ILoggerFactory loggerFactory,
         IConfiguration config,
         CurvePoolContext curvePoolContext,
         CurvePoolSnapshotsContext curvePoolSnapshotsContext,
         CurvePoolRatiosContext curvePoolRatiosContext,
         IHttpClientFactory httpClientFactory)
     {
+        Logger = loggerFactory.CreateLogger<CurvePools>();
         Config = config;
         CurvePoolContext = curvePoolContext;
         CurvePoolSnapshotsContext = curvePoolSnapshotsContext;
@@ -30,13 +31,12 @@ public class CurvePools
         HttpClientFactory = httpClientFactory;
     }
 
-    [FunctionName("CurvePools")]
+    [Function("CurvePools")]
     public async Task Run(
-        [TimerTrigger("0 0 */12 * * *", RunOnStartup = false)] TimerInfo curvePoolsTimer,
-        ILogger log)
+        [TimerTrigger("0 0 */12 * * *", RunOnStartup = false)] TimerInfo curvePoolsTimer)
     {
         var poolsCurve = await Jobs.Jobs.CurvePools.UpdateCurvePools(
-            log,
+            Logger,
             HttpClientFactory.CreateClient,
             CurvePoolContext);
 
@@ -47,7 +47,7 @@ public class CurvePools
         foreach (var pool in poolsCurve)
         {
             var snapshot = await Jobs.Jobs.CurvePools.UpdateCurvePoolSnapshots(
-                log,
+                Logger,
                 HttpClientFactory.CreateClient,
                 alchemyEndpoint,
                 CurvePoolSnapshotsContext,
@@ -57,6 +57,6 @@ public class CurvePools
         }
 
         foreach (var snapshot in snapshots)
-            await Jobs.Jobs.CurvePools.UpdateCurvePoolRatios(log, CurvePoolRatiosContext, snapshot);
+            await Jobs.Jobs.CurvePools.UpdateCurvePoolRatios(Logger, CurvePoolRatiosContext, snapshot);
     }
 }
