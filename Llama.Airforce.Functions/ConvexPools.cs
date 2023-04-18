@@ -29,7 +29,7 @@ public class ConvexPools
 
     [Function("ConvexPools")]
     public async Task Run(
-        [TimerTrigger("0 0 */12 * * *", RunOnStartup = false)] TimerInfo convexPoolsTimer)
+        [TimerTrigger("0 0 0 * * *", RunOnStartup = false)] TimerInfo convexPoolsTimer)
     {
         var graphUrl = Config.GetValue<string>("GRAPH_CONVEX");
 

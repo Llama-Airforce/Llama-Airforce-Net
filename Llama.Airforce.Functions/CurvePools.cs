@@ -33,7 +33,7 @@ public class CurvePools
 
     [Function("CurvePools")]
     public async Task Run(
-        [TimerTrigger("0 0 */12 * * *", RunOnStartup = false)] TimerInfo curvePoolsTimer)
+        [TimerTrigger("0 0 0 * * *", RunOnStartup = false)] TimerInfo curvePoolsTimer)
     {
         var poolsCurve = await Jobs.Jobs.CurvePools.UpdateCurvePools(
             Logger,
