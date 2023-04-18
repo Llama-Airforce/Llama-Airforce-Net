@@ -1,6 +1,5 @@
 using LanguageExt;
 using LanguageExt.UnsafeValueAccess;
-using Llama.Airforce.API.Extensions;
 using Llama.Airforce.Database.Contexts;
 using Llama.Airforce.SeedWork.Extensions;
 using Llama.Airforce.SeedWork.Types;
@@ -76,7 +75,10 @@ public class AirdropController : ControllerBase
         if (body.Password != "NotAnImportantPassword")
             return Content("Invalid password");
 
-        Cache.Clear();
-        return Content("Cache cleared");
+        Cache.Remove("union");
+        Cache.Remove("ufxs");
+        Cache.Remove("ucvx");
+
+        return Content("Cache cleared (union, ufxs, ucvx)");
     }
 }
