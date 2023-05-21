@@ -12,7 +12,6 @@ public class CurvePools
     private readonly IConfiguration Config;
     private readonly CurvePoolContext CurvePoolContext;
     private readonly CurvePoolSnapshotsContext CurvePoolSnapshotsContext;
-    private readonly CurvePoolRatiosContext CurvePoolRatiosContext;
     private readonly IHttpClientFactory HttpClientFactory;
 
     public CurvePools(
@@ -20,14 +19,12 @@ public class CurvePools
         IConfiguration config,
         CurvePoolContext curvePoolContext,
         CurvePoolSnapshotsContext curvePoolSnapshotsContext,
-        CurvePoolRatiosContext curvePoolRatiosContext,
         IHttpClientFactory httpClientFactory)
     {
         Logger = loggerFactory.CreateLogger<CurvePools>();
         Config = config;
         CurvePoolContext = curvePoolContext;
         CurvePoolSnapshotsContext = curvePoolSnapshotsContext;
-        CurvePoolRatiosContext = curvePoolRatiosContext;
         HttpClientFactory = httpClientFactory;
     }
 
@@ -55,8 +52,5 @@ public class CurvePools
 
             snapshot.IfSome(s => snapshots = snapshots.Add(s));
         }
-
-        foreach (var snapshot in snapshots)
-            await Jobs.Jobs.CurvePools.UpdateCurvePoolRatios(Logger, CurvePoolRatiosContext, snapshot);
     }
 }

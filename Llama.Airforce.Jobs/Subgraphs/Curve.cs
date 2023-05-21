@@ -81,44 +81,4 @@ public class Curve
             .MapTry(JsonConvert.DeserializeObject<RequestCurvePoolSnapshots>)
             .MapTry(data => data.Data.CurveSnapshotList.Single());
     });
-
-    /// <summary>
-    /// Returns fees and emissions snapshots of Curve pools from The Graph
-    /// </summary>
-    public static Func<
-            Func<HttpClient>,
-            EitherAsync<Error, Lst<CurvePoolSnapshot>>>
-        GetPoolSnapshotsForRatio = fun((
-            Func<HttpClient> httpFactory) =>
-    {
-        string query = $@"
-        {{
-            pools(first: 1000)
-            {{
-                name
-
-                snapshots(
-                    first: 26,
-                    orderBy: timestamp,
-                    orderDirection: desc
-                ) {{
-                    timestamp
-                    fees
-                }}        
-
-                emissions(
-                    first: 26,
-                    orderBy: timestamp,
-                    orderDirection: desc
-                ) {{
-                    timestamp
-                    value
-                }}
-            }}
-        }}";
-
-        return Subgraph.GetData(httpFactory, SUBGRAPH_URL_CURVE, query)
-            .MapTry(JsonConvert.DeserializeObject<RequestCurvePoolSnapshots>)
-            .MapTry(data => toList(data.Data.CurveSnapshotList));
-    });
 }

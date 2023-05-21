@@ -1,6 +1,5 @@
 ﻿using LanguageExt;
 using Llama.Airforce.Database.Contexts;
-using Llama.Airforce.Jobs.Contracts;
 using Llama.Airforce.Jobs.Subgraphs.Models;
 using Llama.Airforce.SeedWork.Extensions;
 using Microsoft.Extensions.Logging;
@@ -131,61 +130,4 @@ public class CurvePools
                     logger.LogError($"Failed to update Curve pools snapshots: {ex}");
                     return None;
                 }));
-
-    public static Func<
-            ILogger,
-            CurvePoolRatiosContext,
-            Db.Curve.CurvePoolSnapshots,
-            Task>
-        UpdateCurvePoolRatios = fun(async (
-            ILogger logger,
-            CurvePoolRatiosContext context,
-            Db.Curve.CurvePoolSnapshots snapshot) =>
-        {
-            // we only store ratios for the last 6 months
-            var ratioCutOffDate = DateTimeOffset.Now.AddMonths(-6).ToUnixTimeSeconds();
-            var aggregatedFees = snapshot
-                .FeeSnapshots
-                .GroupBy(x => x.TimeStamp)
-                .Select(x => new Curve.Fees(
-                    x.Key,
-                    x.Sum(xa => xa.Value)))
-                .Where(x => x.TimeStamp > ratioCutOffDate)
-                .ToList();
-
-            var aggregatedEmissions = snapshot
-                .EmissionSnapshots
-                .GroupBy(x => x.TimeStamp)
-                .Select(x => new Curve.Emissions(
-                    x.Key,
-                    x.Sum(xa => xa.Value),
-                    x.Sum(xa => xa.CrvAmount)))
-                .Where(x => x.TimeStamp > ratioCutOffDate)
-                .ToList();
-
-            var ratios = aggregatedEmissions.Map(emissions =>
-            {
-                var fees = Optional(aggregatedFees.Find(fees => fees.TimeStamp == emissions.TimeStamp));
-                var ratio = emissions.Value == 0
-                    ? 0
-                    : fees.Map(f => f.Value / emissions.Value).IfNone(0);
-
-                return new Db.Curve.PoolRatio
-                {
-                    TimeStamp = emissions.TimeStamp,
-                    Ratio = ratio
-                };
-            });
-
-            var ratioDb = new Db.Curve.CurvePoolRatios
-            {
-                Name = snapshot.Name.Replace("/", "-"), // Replace / with - for CosmosDB.
-                Ratios = ratios.ToList()
-            };
-
-            await context.UpsertAsync(ratioDb);
-            logger.LogInformation($"Updated Curve pool ratios: {snapshot.Name}");
-
-            return Unit.Default;
-        });
 }

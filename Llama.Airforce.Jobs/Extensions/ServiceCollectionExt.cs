@@ -82,20 +82,6 @@ public static class ServiceCollectionExt
             var primaryKey = configuration.GetValue<string>("DB_PRIMARY_KEY");
             var dbName = configuration.GetValue<string>("DB_NAME");
 
-            return CurvePoolRatiosContext
-                .Create(
-                    endpointUri: endpointUri,
-                    primaryKey: primaryKey,
-                    dbName: dbName)
-                .GetAwaiter()
-                .GetResult();
-        })
-        .AddTransient((_) =>
-        {
-            var endpointUri = configuration.GetValue<string>("DB_ENDPOINT");
-            var primaryKey = configuration.GetValue<string>("DB_PRIMARY_KEY");
-            var dbName = configuration.GetValue<string>("DB_NAME");
-
             return BribesContext
                 .Create(
                     endpointUri: endpointUri,
