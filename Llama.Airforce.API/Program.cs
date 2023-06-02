@@ -13,7 +13,8 @@ builder.Services.AddCors(options =>
                     "https://www.llama.airforce",
                     "https://next.llama.airforce",
                     "https://llama.airforce",
-                    "https://fixedforex.live") // dev: https://twitter.com/zashtoneth
+                    "https://fixedforex.live", // dev: https://twitter.com/zashtoneth
+                    "https://aura.defilytica.com") // dev: aura grantee
                 .AllowAnyHeader()
                 .AllowAnyMethod();
         });
