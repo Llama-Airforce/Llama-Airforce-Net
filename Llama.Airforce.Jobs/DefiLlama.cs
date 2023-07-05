@@ -31,7 +31,7 @@ public static class DefiLlama
         public long Timestamp { get; set; }
     }
 
-    public const string DEFILLAMA_PRICES_URL = "https://coins.llama.fi/prices";
+    public const string DEFILLAMA_PRICES_URL = "https://coins.llama.fi/prices/historical";
 
     public static Func<
             Func<HttpClient>,
@@ -45,20 +45,16 @@ public static class DefiLlama
             Network network,
             Option<DateTime> date) =>
         {
-            var key = $"{network.NetworkToString()}:{address}";
-            var body = new
-            {
-                coins = new[] { key },
-                timestamp = date.Map(x => x.ToUnixTimeSeconds()).IfNone(0)
-            };
+            var timestamp = date.Map(x => x.ToUnixTimeSeconds()).IfNone(0);
+            var coin = $"{network.NetworkToString()}:{address}";
+            var url = $"{DEFILLAMA_PRICES_URL}/{timestamp}/{coin}";
 
             return Functions
                 .HttpFunctions
                 .GetData(
                     httpFactory,
-                    DEFILLAMA_PRICES_URL,
-                    JsonConvert.SerializeObject(body))
+                    url)
                 .MapTry(JsonConvert.DeserializeObject<RequestPrice>)
-                .MapTry(x => x.Coins[key].Price);
+                .MapTry(x => x.Coins[coin].Price);
         });
 }

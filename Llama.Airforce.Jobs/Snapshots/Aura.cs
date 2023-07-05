@@ -87,7 +87,7 @@ public class Aura
 
             return Functions
                 .HttpFunctions
-                .GetData(
+                .PostData(
                     httpFactory,
                     SNAPSHOT_SCORE_URL,
                     JsonConvert.SerializeObject(new Dictionary<string, dynamic> { { "params", @params } }))

@@ -25,7 +25,7 @@ public static class Snapshot
             string url,
             string query) => Functions
         .HttpFunctions
-        .GetData(
+        .PostData(
             httpFactory,
             url,
             JsonConvert.SerializeObject(new
