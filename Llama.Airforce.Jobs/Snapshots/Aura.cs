@@ -25,10 +25,11 @@ public class Aura
             int version) => Snapshot.GetProposalIds
                 .Par(httpFactory)
                 .Par(version == 1 ? SPACE_AURA_V1 : SPACE_AURA_V2)
+                .Par(None)
                 .Par(version == 1
                     ? proposal => proposal.Title.ToLowerInvariant().StartsWith("gauge weight for week of")
                     : _ => true)
-                .Par(id => id)());
+                .Par(proposal => proposal.Id)());
 
     /// <summary>
     /// Returns score for a list of voters at a certain block number.

@@ -11,11 +11,14 @@ namespace Llama.Airforce.API.Controllers;
 public class BribesController : ControllerBase
 {
     private readonly BribesContext Context;
+    private readonly BribesV2Context ContextV2;
 
     public BribesController(
-        BribesContext context)
+        BribesContext context,
+        BribesV2Context contextV2)
     {
         Context = context;
+        ContextV2 = contextV2;
     }
 
     public class IndexParams
@@ -32,9 +35,15 @@ public class BribesController : ControllerBase
         var platform = string.IsNullOrWhiteSpace(body.Platform) ? "votium" : body.Platform;
         var protocol = string.IsNullOrWhiteSpace(body.Protocol) ? "cvx-crv" : body.Protocol;
 
-        var lastRound = await Context
+        var lastRoundV1 = await Context
             .Rounds(body.Platform, body.Protocol)
             .Map(rs => rs.LastOrDefault());
+
+        var lastRoundV2 = await ContextV2
+           .Rounds(body.Platform, body.Protocol)
+           .Map(rs => rs.LastOrDefault());
+
+        var lastRound = Math.Max(lastRoundV1, lastRoundV2);
 
         var hasRound = int.TryParse(body.Round, out var round);
         if (!hasRound || round > lastRound || round < 1)
@@ -45,20 +54,36 @@ public class BribesController : ControllerBase
             StringMax.Of(protocol),
             round);
 
-        var epoch = await Context
-            .GetAsync(epochId)
-            .MapT(epoch => (Models.Votium.Epoch)epoch);
+        ActionResult CreateResult<T>(Option<T> epoch) =>
+            epoch.Match(
+                Some: x => new JsonResult(new
+                {
+                    success = true,
+                    epoch = x
+                }),
+                None: () => new JsonResult(new
+                {
+                    success = false
+                }));
 
-        return epoch.Match(
-            Some: x => new JsonResult(new
-            {
-                success = true,
-                epoch = x
-            }),
-            None: () => new JsonResult(new
-            {
-                success = false
-            }));
+        // V1
+        if (round <= lastRoundV1)
+        {
+            var epoch = await Context
+               .GetAsync(epochId)
+               .MapT(epoch => (Models.Votium.Epoch)epoch);
+
+            return CreateResult(epoch);
+        }
+        // V2
+        else
+        {
+            var epoch = await ContextV2
+               .GetAsync(epochId)
+               .MapT(epoch => (Models.Votium.EpochV2)epoch);
+
+            return CreateResult(epoch);
+        }
     }
 
     public class RoundsParams
@@ -74,7 +99,10 @@ public class BribesController : ControllerBase
         var platform = string.IsNullOrWhiteSpace(body.Platform) ? "votium" : body.Platform;
         var protocol = string.IsNullOrWhiteSpace(body.Protocol) ? "cvx-crv" : body.Protocol;
 
-        var rounds = await Context.Rounds(platform, protocol);
+        var roundsV1 = await Context.Rounds(platform, protocol);
+        var roundsV2 = await ContextV2.Rounds(platform, protocol);
+
+        var rounds = roundsV1.Concat(roundsV2);
 
         return new JsonResult(new
         {
