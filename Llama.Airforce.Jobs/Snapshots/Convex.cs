@@ -23,11 +23,23 @@ public class Convex
         GetProposalIds = fun((Func<HttpClient> httpFactory) => Snapshot.GetProposalIds
             .Par(httpFactory)
             .Par(SPACE_CVX)
+            .Par(None)
             .Par(_ => true)
-            .Par(id => (id.StartsWith("0x")
-                    ? new Sha3Keccack().CalculateHashFromHex(id)
-                    : new Sha3Keccack().CalculateHash(id))
+            .Par(proposal => (proposal.Id.StartsWith("0x")
+                    ? new Sha3Keccack().CalculateHashFromHex(proposal.Id)
+                    : new Sha3Keccack().CalculateHash(proposal.Id))
                 .Insert(0, "0x"))());
+
+    // Key is proposalId
+    public static Func<
+            Func<HttpClient>,
+            EitherAsync<Error, Map<string, (int Index, string Title)>>>
+        GetProposalIdsV2 = fun((Func<HttpClient> httpFactory) => Snapshot.GetProposalIds
+           .Par(httpFactory)
+           .Par(SPACE_CVX)
+           .Par(Some("Gauge Weight for Week of"))
+           .Par(_ => true)
+           .Par(proposal => proposal.Title)());
 
     /// <summary>
     /// Returns score for a list of voters at a certain block number.

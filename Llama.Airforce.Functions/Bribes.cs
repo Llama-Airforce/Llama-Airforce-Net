@@ -15,6 +15,7 @@ public class Bribes
     private readonly IConfiguration Config;
     private readonly IWeb3 Web3;
     private readonly BribesContext BribesContext;
+    private readonly BribesV2Context BribesV2Context;
     private readonly IHttpClientFactory HttpClientFactory;
 
     public Bribes(
@@ -22,12 +23,14 @@ public class Bribes
         IConfiguration config,
         IWeb3 web3,
         BribesContext bribesContext,
+        BribesV2Context bribesV2Context,
         IHttpClientFactory httpClientFactory)
     {
         Logger = loggerFactory.CreateLogger<Bribes>();
         Config = config;
         Web3 = web3;
         BribesContext = bribesContext;
+        BribesV2Context = bribesV2Context;
         HttpClientFactory = httpClientFactory;
     }
 
@@ -41,28 +44,48 @@ public class Bribes
         // This constant is so that when needed, we can rerun the code for the older version.
         const int AURA_VERSION = 2;
 
-        await Jobs.Jobs.Bribes.UpdateBribes(
-            Logger,
-            BribesContext,
-            HttpClientFactory.CreateClient,
-            Web3,
-            new BribesFactory.OptionsGetBribes(
-                Platform.Votium,
-                Protocol.ConvexCrv,
-                lastEpochOnly,
-                AURA_VERSION),
-            None);
+        const int VOTIUM_VERSION = 2;
 
-        await Jobs.Jobs.Bribes.UpdateBribes(
-            Logger,
-            BribesContext,
-            HttpClientFactory.CreateClient,
-            Web3,
-            new BribesFactory.OptionsGetBribes(
-                Platform.HiddenHand,
-                Protocol.AuraBal,
-                lastEpochOnly,
-                AURA_VERSION),
-            None);
+        if (VOTIUM_VERSION == 2)
+        {
+            await Jobs.Jobs.BribesV2.UpdateBribes(
+                Logger,
+                BribesV2Context,
+                HttpClientFactory.CreateClient,
+                Web3,
+                new BribesV2Factory.OptionsGetBribes(lastEpochOnly),
+                None);
+        }
+        else
+        {
+            await Jobs.Jobs.Bribes.UpdateBribes(
+                Logger,
+                BribesContext,
+                HttpClientFactory.CreateClient,
+                Web3,
+                new BribesFactory.OptionsGetBribes(
+                    Platform.Votium,
+                    Protocol.ConvexCrv,
+                    lastEpochOnly,
+                    AURA_VERSION),
+                None);
+        }
+
+        const bool AURA_HOLIDAY = true;
+
+        if (!AURA_HOLIDAY)
+        {
+            await Jobs.Jobs.Bribes.UpdateBribes(
+                Logger,
+                BribesContext,
+                HttpClientFactory.CreateClient,
+                Web3,
+                new BribesFactory.OptionsGetBribes(
+                    Platform.HiddenHand,
+                    Protocol.AuraBal,
+                    lastEpochOnly,
+                    AURA_VERSION),
+                None);
+        }
     }
 }

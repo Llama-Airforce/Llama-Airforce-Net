@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace Llama.Airforce.Database.Models.Bribes;
 
-public class Epoch
+public class EpochV2
 {
     [JsonProperty("id")]
     public string Id { get; set; }
@@ -30,5 +30,5 @@ public class Epoch
     public IReadOnlyDictionary<string, double> Bribed { get; set; }
 
     [JsonProperty("bribes")]
-    public List<Bribe> Bribes { get; set; }
+    public List<BribeV2> Bribes { get; set; }
 }

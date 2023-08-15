@@ -10,5 +10,6 @@
         "excludedTypes": "Request"
       }
     }
-  }
+  },
+  "functions": ["bribes"]
 }

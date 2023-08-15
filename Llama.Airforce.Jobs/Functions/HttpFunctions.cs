@@ -31,7 +31,8 @@ public static class HttpFunctions
             if (!resp.IsSuccessStatusCode)
                 throw new Exception($"Unable to get HTTP rest data for {url}, status code: {resp.StatusCode}");
 
-            return await resp.Content.ReadAsStringAsync();
+            var respContent = await resp.Content.ReadAsStringAsync();
+            return respContent;
         })
         .ToEither());
 

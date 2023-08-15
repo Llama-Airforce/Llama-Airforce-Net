@@ -89,5 +89,19 @@ public static class ServiceCollectionExt
                     dbName: dbName)
                 .GetAwaiter()
                 .GetResult();
+        })
+       .AddTransient((_) =>
+        {
+            var endpointUri = configuration.GetValue<string>("DB_ENDPOINT");
+            var primaryKey = configuration.GetValue<string>("DB_PRIMARY_KEY");
+            var dbName = configuration.GetValue<string>("DB_NAME");
+
+            return BribesV2Context
+               .Create(
+                    endpointUri: endpointUri,
+                    primaryKey: primaryKey,
+                    dbName: dbName)
+               .GetAwaiter()
+               .GetResult();
         });
 }

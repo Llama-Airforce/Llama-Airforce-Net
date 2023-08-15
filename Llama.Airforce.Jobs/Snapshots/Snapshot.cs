@@ -40,18 +40,23 @@ public static class Snapshot
     public static Func<
             Func<HttpClient>,
             string,
+            Option<string>,
             Func<Proposal, bool>,
-            Func<string, string>,
-            EitherAsync<Error, Map<string, (int Index, string Id)>>>
+            Func<Proposal, string>,
+            EitherAsync<Error, Map<string, (int Index, string Value)>>>
         GetProposalIds = fun((
             Func<HttpClient> httpFactory,
             string space,
+            Option<string> title,
             Func<Proposal, bool> filter,
-            Func<string, string> valueMap) =>
+            Func<Proposal, string> valueMap) =>
         {
             string Query = $@"{{
 proposals(
-    where: {{ space: ""{space}"" }}
+    where: {{
+        space: ""{space}""
+        title_contains: ""{title.IfNone("")}""
+    }}
     first: 1000
     orderBy: ""created""
     orderDirection: asc
@@ -69,7 +74,7 @@ proposals(
                     .Where(x => filter(x.Proposal))
                     .Select(x => (
                         Key: x.Proposal.Id,
-                        Value: (x.Index, Id: valueMap(x.Proposal.Id))))));
+                        Value: (x.Index, Value: valueMap(x.Proposal))))));
         });
 
     /// <summary>
