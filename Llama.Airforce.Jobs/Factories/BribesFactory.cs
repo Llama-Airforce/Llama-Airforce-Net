@@ -192,6 +192,16 @@ public static class BribesFactory
                         "0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b",
                         "4800000000000000000000"));
 
+                // Fixup for OETH bribing the wrong pool.
+                if (proposal.Id == "0x548567255aeb8d0c8a3fc69f55ac1f1df998df5a2bb93f616a59bc7cb21848ca")
+                {
+                    var i = bribes.FindIndex(b => b.Choice == 154);
+                    var oldBribe = bribes[i];
+                    var newBribe = oldBribe with { Choice = 153 };
+                    bribes.RemoveAt(i);
+                    bribes.Add(newBribe);
+                }
+
                 return bribes
                     // Process each bribe.
                     .Map(par(ProcessBribe, logger, web3, proposal, par(getPrice, proposal)))
