@@ -68,7 +68,7 @@ public class BribeFactoryV2Tests
         var gauges = await bribeFunctions.GetGauges()
             .MatchAsync(x => x, _ => throw new Exception());
 
-        var epoch = epochs.First();
+        var epoch = epochs.Skip(1).First();
         var dbEpoch = await BribesV2Factory.ProcessEpoch(
                 logger,
                 web3,
@@ -77,7 +77,7 @@ public class BribeFactoryV2Tests
                     proposalIds,
                     epoch,
                     gauges,
-                    0),
+                    51),
                 getPrice)
             .MatchAsync(x => x, _ => throw new Exception());
 
