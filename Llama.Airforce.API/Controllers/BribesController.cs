@@ -36,11 +36,11 @@ public class BribesController : ControllerBase
         var protocol = string.IsNullOrWhiteSpace(body.Protocol) ? "cvx-crv" : body.Protocol;
 
         var lastRoundV1 = await Context
-            .Rounds(body.Platform, body.Protocol)
+            .Rounds(platform, protocol)
             .Map(rs => rs.LastOrDefault());
 
         var lastRoundV2 = await ContextV2
-           .Rounds(body.Platform, body.Protocol)
+           .Rounds(platform, protocol)
            .Map(rs => rs.LastOrDefault());
 
         var lastRound = Math.Max(lastRoundV1, lastRoundV2);
