@@ -1,5 +1,6 @@
 ﻿using LanguageExt;
 using LanguageExt.Common;
+using Llama.Airforce.Jobs.Extensions;
 using Llama.Airforce.Jobs.Subgraphs.Models;
 using Llama.Airforce.SeedWork.Extensions;
 using Newtonsoft.Json;
@@ -74,10 +75,17 @@ rounds(
 } }";
 
         return Subgraph.GetData(httpFactory, SUBGRAPH_URL_VOTIUM_V2, Query)
-            .MapTry(JsonConvert.DeserializeObject<RequestEpochsVotiumV2>)
-            .MapTry(data => toList(data
-                .Data
-                .EpochList
-                .Select(epoch => (Dom.EpochV2)epoch)));
+           .MapTry(JsonConvert.DeserializeObject<RequestEpochsVotiumV2>)
+           .MapTry(data => toList(data
+               .Data
+               .EpochList
+               // Filter out epochs that haven't started yet.
+               .Where(epoch =>
+               {
+                   var epochStart = 1348 * 86400 * 14 + epoch.Id * 86400 * 14;
+                   var epochDate = DateTimeExt.FromUnixTimeSeconds(epochStart);
+                   return epochDate <= DateTime.Now;
+               })
+               .Select(epoch => (Dom.EpochV2)epoch)));
     });
 }
