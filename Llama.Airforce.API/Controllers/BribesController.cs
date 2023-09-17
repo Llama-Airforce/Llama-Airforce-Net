@@ -29,6 +29,7 @@ public class BribesController : ControllerBase
         public string? Platform { get; set; }
         public string? Protocol { get; set; }
         public string? Round { get; set; }
+        public bool? L2 { get; set; }
     }
 
     [Route("")]
@@ -37,6 +38,7 @@ public class BribesController : ControllerBase
     {
         var platform = string.IsNullOrWhiteSpace(body.Platform) ? "votium" : body.Platform;
         var protocol = string.IsNullOrWhiteSpace(body.Protocol) ? "cvx-crv" : body.Protocol;
+        var l2 = body.L2 ?? false;
 
         var lastRoundV1 = await Context
             .Rounds(platform, protocol)
@@ -50,7 +52,9 @@ public class BribesController : ControllerBase
            .Rounds(platform, protocol)
            .Map(rs => rs.LastOrDefault());
 
-        var lastRound = new []{ lastRoundV1, lastRoundV2, lastRoundV3 }.Max();
+        var lastRound = l2
+            ? lastRoundV3
+            : new[] { lastRoundV1, lastRoundV2 }.Max();
 
         var hasRound = int.TryParse(body.Round, out var round);
         if (!hasRound || round > lastRound || round < 1)
@@ -74,7 +78,7 @@ public class BribesController : ControllerBase
                 }));
 
         // V1
-        if (round <= lastRoundV1)
+        if (!l2 && round <= lastRoundV1)
         {
             var epoch = await Context
                .GetAsync(epochId)
@@ -84,7 +88,7 @@ public class BribesController : ControllerBase
         }
 
         // V2
-        if (round <= lastRoundV2)
+        if (!l2 && round <= lastRoundV2)
         {
             var epoch = await ContextV2
                .GetAsync(epochId)
