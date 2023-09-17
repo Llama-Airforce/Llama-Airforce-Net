@@ -48,7 +48,7 @@ epoches(
                 .Select(epoch => (Dom.Epoch)epoch)));
     });
 
-        /// <summary>
+    /// <summary>
     /// Returns Votium epoch & bribe history from The Graph
     /// </summary>
     public static Func<
@@ -87,5 +87,46 @@ rounds(
                    return epochDate <= DateTime.Now;
                })
                .Select(epoch => (Dom.EpochV2)epoch)));
+    });
+
+    /// <summary>
+    /// Returns Votium epoch & bribe history from The Graph
+    /// </summary>
+    public static Func<
+            Func<HttpClient>,
+            EitherAsync<Error, Lst<Dom.EpochV3>>>
+        GetEpochsV3 = fun((Func<HttpClient> httpFactory) =>
+        {
+            const string Query = @"{
+rounds(
+    where: { bribeCount_gt: 0 }
+    first: 1000
+    orderBy: initiatedAt
+    orderDirection: asc
+) {
+  id
+  initiatedAt
+  bribeCount
+  incentives {
+    gauge
+    token
+    amount
+    maxPerVote
+  }
+} }";
+
+        return Subgraph.GetData(httpFactory, SUBGRAPH_URL_VOTIUM_V2, Query)
+           .MapTry(JsonConvert.DeserializeObject<RequestEpochsVotiumV3>)
+           .MapTry(data => toList(data
+               .Data
+               .EpochList
+               // Filter out epochs that haven't started yet.
+               .Where(epoch =>
+               {
+                   var epochStart = 1348 * 86400 * 14 + epoch.Id * 86400 * 14;
+                   var epochDate = DateTimeExt.FromUnixTimeSeconds(epochStart);
+                   return epochDate <= DateTime.Now;
+               })
+               .Select(epoch => (Dom.EpochV3)epoch)));
     });
 }

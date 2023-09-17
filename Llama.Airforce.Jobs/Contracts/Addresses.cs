@@ -41,6 +41,8 @@ public static class Addresses
         public static Address Staked = Address.Of("0xCF50b810E57Ac33B91dCF525C6ddd9881B139332");
 
         public static Address VoterProxy = Address.Of("0x989AEb4d175e16225E39E87d0D97A3360524AD80");
+
+        public static Address L2GaugeVotingPlatform = Address.Of("0x6d024fa49de64a975980cddd4c3212492d189e57");
     }
 
     public static class CvxCrv

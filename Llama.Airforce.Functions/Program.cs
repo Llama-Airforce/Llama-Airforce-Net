@@ -19,9 +19,12 @@ var host = new HostBuilder()
         s.AddHttpClient();
         s.AddContexts(config);
 
+        var web3ZKEVM = new Web3("https://zkevm-rpc.com");
+        s.AddSingleton<IWeb3>(web3ZKEVM);
+
         var alchemy = config.GetValue<string>("ALCHEMY");
-        var web3 = new Web3(alchemy);
-        s.AddSingleton<IWeb3>(web3);
+        var web3ETH = new Web3(alchemy);
+        s.AddSingleton<IWeb3>(web3ETH);
 
         // Remove annoying HTTP logging which ignores host.json.
         s.RemoveAll<IHttpMessageHandlerBuilderFilter>();

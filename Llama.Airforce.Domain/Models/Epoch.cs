@@ -11,12 +11,22 @@ public record EpochV2(
     int Round,
     List<BribeV2> Bribes);
 
+public record EpochV3(
+    int Round,
+    List<BribeV3> Bribes);
+
 public record Bribe(
     int Choice,
     string Token,
     string Amount);
 
 public record BribeV2(
+    string Gauge,
+    string Token,
+    string Amount,
+    string MaxPerVote);
+
+public record BribeV3(
     string Gauge,
     string Token,
     string Amount,

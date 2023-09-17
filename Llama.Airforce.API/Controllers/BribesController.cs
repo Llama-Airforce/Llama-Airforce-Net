@@ -12,13 +12,16 @@ public class BribesController : ControllerBase
 {
     private readonly BribesContext Context;
     private readonly BribesV2Context ContextV2;
+    private readonly BribesV3Context ContextV3;
 
     public BribesController(
         BribesContext context,
-        BribesV2Context contextV2)
+        BribesV2Context contextV2,
+        BribesV3Context contextV3)
     {
         Context = context;
         ContextV2 = contextV2;
+        ContextV3 = contextV3;
     }
 
     public class IndexParams
@@ -43,7 +46,11 @@ public class BribesController : ControllerBase
            .Rounds(platform, protocol)
            .Map(rs => rs.LastOrDefault());
 
-        var lastRound = Math.Max(lastRoundV1, lastRoundV2);
+        var lastRoundV3 = await ContextV3
+           .Rounds(platform, protocol)
+           .Map(rs => rs.LastOrDefault());
+
+        var lastRound = new []{ lastRoundV1, lastRoundV2, lastRoundV3 }.Max();
 
         var hasRound = int.TryParse(body.Round, out var round);
         if (!hasRound || round > lastRound || round < 1)
@@ -75,12 +82,23 @@ public class BribesController : ControllerBase
 
             return CreateResult(epoch);
         }
+
         // V2
-        else
+        if (round <= lastRoundV2)
         {
             var epoch = await ContextV2
                .GetAsync(epochId)
                .MapT(epoch => (Models.Votium.EpochV2)epoch);
+
+            return CreateResult(epoch);
+        }
+
+        // V3
+        else
+        {
+            var epoch = await ContextV3
+               .GetAsync(epochId)
+               .MapT(epoch => (Models.Votium.EpochV3)epoch);
 
             return CreateResult(epoch);
         }
@@ -101,8 +119,9 @@ public class BribesController : ControllerBase
 
         var roundsV1 = await Context.Rounds(platform, protocol);
         var roundsV2 = await ContextV2.Rounds(platform, protocol);
+        var roundsV3 = await ContextV3.Rounds(platform, protocol);
 
-        var rounds = roundsV1.Concat(roundsV2);
+        var rounds = roundsV1.Concat(roundsV2).Concat(roundsV3);
 
         return new JsonResult(new
         {
