@@ -20,6 +20,13 @@ public static class ConvexL2Voting
         public string Gauge { get; set; }
     }
 
+    [Function("voteTotals", "uint256")]
+    private class VoteTotalFunction : FunctionMessage
+    {
+        [Parameter("uint256", 1)]
+        public BigInteger ProposalId { get; set; }
+    }
+
     [FunctionOutput]
     public class ProposalOutput : IFunctionOutputDTO
     {
@@ -57,6 +64,20 @@ public static class ConvexL2Voting
         {
             ProposalId = proposalId,
             Gauge = gauge
+        }));
+
+    public static Func<
+            IWeb3,
+            BigInteger,
+            Task<BigInteger>>
+        VoteTotal = fun((
+            IWeb3 web3,
+            BigInteger proposalId) => web3
+       .Eth
+       .GetContractQueryHandler<VoteTotalFunction>()
+       .QueryAsync<BigInteger>(Addresses.Convex.L2GaugeVotingPlatform, new VoteTotalFunction
+       {
+            ProposalId = proposalId,
         }));
 
     public static Func<

@@ -34,6 +34,19 @@ public class ConvexL2VotingTests
     }
 
     [Test]
+    public async Task GetVoteTotal()
+    {
+        // Arrange
+        var web3 = new Web3("https://zkevm-rpc.com");
+
+        // Act
+        var gaugeTotal = await ConvexL2Voting.VoteTotal(web3, 0);
+
+        // Assert
+        Assert.IsTrue(gaugeTotal == BigInteger.Parse("21006972628573442936178895"));
+    }
+
+    [Test]
     public async Task GetProposal()
     {
         // Arrange

@@ -165,9 +165,15 @@ public static class BribesV3Factory
                             acc.AddOrUpdate(gauge.Pool, x => x + gauge.Score, gauge.Score)))
                    .ToEitherAsync());
 
+            var scoresTotal_ = ConvexL2Voting
+               .VoteTotal(web3ZKEVM, proposalId)
+               .Map(x => x.DivideByDecimals(18))
+               .ToEitherAsync();
+
             return from proposalEnd in proposalEnd_
                    from bribes in bribes_
                    from bribed in bribed_
+                   from scoresTotal in scoresTotal_
                    select new Db.Bribes.EpochV3
                    {
                        Platform = Platform.Votium.ToPlatformString(),
@@ -177,7 +183,7 @@ public static class BribesV3Factory
                        Proposal = proposalId.ToString(),
                        Bribed = bribed.ToDictionary(),
                        Bribes = bribes.ToList(),
-                       ScoresTotal = 0 // TODO: Awaiting c2tp adding this to the platform contract.
+                       ScoresTotal = scoresTotal
                    };
         });
 
