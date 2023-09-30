@@ -125,7 +125,7 @@ public class BribesController : ControllerBase
         var roundsV2 = await ContextV2.Rounds(platform, protocol);
         var roundsV3 = await ContextV3.Rounds(platform, protocol);
 
-        var rounds = roundsV1.Concat(roundsV2).Concat(roundsV3);
+        var rounds = roundsV1.Concat(roundsV2).Concat(roundsV3).Distinct();
 
         return new JsonResult(new
         {
