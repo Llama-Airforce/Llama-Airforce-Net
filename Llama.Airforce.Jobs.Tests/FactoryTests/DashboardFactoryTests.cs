@@ -32,10 +32,10 @@ public class DashboardFactoryTests
         var web3 = new Web3(alchemy);
         HttpClient http() => new();
         var logger = new LoggerFactory().CreateLogger("test");
-        var epochs = Lst<Epoch>.Empty;
-        var latestFinishedEpoch = new Epoch
+        var epochs = Lst<EpochV2>.Empty;
+        var latestFinishedEpoch = new EpochV2
         {
-            Bribes = new List<Bribe> { new() { Amount = 0.44}},
+            Bribes = new List<BribeV2> { new() { Amount = 0.44}},
             Bribed = new Dictionary<string, double> { { "foo", 1 } },
             ScoresTotal = 1
         };
@@ -60,10 +60,10 @@ public class DashboardFactoryTests
         var web3 = new Web3(alchemy);
         HttpClient http() => new();
         var logger = new LoggerFactory().CreateLogger("test");
-        var epochs = Lst<Epoch>.Empty;
-        var latestFinishedEpoch = new Epoch
+        var epochs = Lst<EpochV2>.Empty;
+        var latestFinishedEpoch = new EpochV2
         {
-            Bribes = new List<Bribe> { new() { Amount = 0.44 } },
+            Bribes = new List<BribeV2> { new() { Amount = 0.44 } },
             Bribed = new Dictionary<string, double> { { "foo", 1 } },
             ScoresTotal = 0
         };

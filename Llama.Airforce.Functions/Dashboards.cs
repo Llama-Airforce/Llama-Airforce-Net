@@ -15,6 +15,7 @@ public class Dashboards
     private readonly ILogger Logger;
     private readonly IWeb3 Web3;
     private readonly BribesContext BribesContext;
+    private readonly BribesV2Context BribesV2Context;
     private readonly DashboardContext DashboardContext;
     private readonly IHttpClientFactory HttpClientFactory;
 
@@ -22,12 +23,14 @@ public class Dashboards
         ILoggerFactory loggerFactory,
         IWeb3 web3,
         BribesContext bribesContext,
+        BribesV2Context bribesV2Context,
         DashboardContext dashboardContext,
         IHttpClientFactory httpClientFactory)
     {
         Logger = loggerFactory.CreateLogger<Dashboards>();
         Web3 = web3;
         BribesContext = bribesContext;
+        BribesV2Context = bribesV2Context;
         DashboardContext = dashboardContext;
         HttpClientFactory = httpClientFactory;
     }
@@ -37,7 +40,7 @@ public class Dashboards
         [TimerTrigger("0 */15 * * * *", RunOnStartup = false)] TimerInfo dashboardsTimer)
     {
         // Get Votium data.
-        var epochsVotium = await BribesContext
+        var epochsVotium = await BribesV2Context
             .GetAllAsync(
                 Platform.Votium.ToPlatformString(),
                 Protocol.ConvexCrv.ToProtocolString())

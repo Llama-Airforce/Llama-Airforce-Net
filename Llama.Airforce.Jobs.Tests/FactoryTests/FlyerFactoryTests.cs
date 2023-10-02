@@ -29,9 +29,9 @@ public class FlyerFactoryTests
         var web3 = new Web3(alchemy);
         HttpClient http() => new();
         var pools = LanguageExt.List.empty<Database.Models.Convex.Pool>();
-        var latestFinishedEpoch = new Database.Models.Bribes.Epoch
+        var latestFinishedEpoch = new Database.Models.Bribes.EpochV2
         {
-            Bribes = new List<Database.Models.Bribes.Bribe>(),
+            Bribes = new List<Database.Models.Bribes.BribeV2>(),
             Bribed = new Dictionary<string, double>()
         };
 

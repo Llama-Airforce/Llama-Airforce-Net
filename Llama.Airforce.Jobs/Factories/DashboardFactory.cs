@@ -14,8 +14,8 @@ namespace Llama.Airforce.Jobs.Factories;
 public static class DashboardFactory
 {
     public record VotiumData(
-        Lst<Db.Bribes.Epoch> Epochs,
-        Db.Bribes.Epoch LatestFinishedEpoch);
+        Lst<Db.Bribes.EpochV2> Epochs,
+        Db.Bribes.EpochV2 LatestFinishedEpoch);
 
     public record AuraData(
         Lst<Db.Bribes.Epoch> Epochs,

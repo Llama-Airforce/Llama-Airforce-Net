@@ -14,7 +14,7 @@ public class Flyers
     private readonly ILogger Logger;
     private readonly IWeb3 Web3;
     private readonly PoolContext ConvexPoolContext;
-    private readonly BribesContext BribesContext;
+    private readonly BribesV2Context BribesV2Context;
     private readonly DashboardContext DashboardContext;
     private readonly IHttpClientFactory HttpClientFactory;
 
@@ -22,14 +22,14 @@ public class Flyers
         ILoggerFactory loggerFactory,
         IWeb3 web3,
         PoolContext convexPoolContext,
-        BribesContext bribesContext,
+        BribesV2Context bribesV2Context,
         DashboardContext dashboardContext,
         IHttpClientFactory httpClientFactory)
     {
         Logger = loggerFactory.CreateLogger<Flyers>();
         Web3 = web3;
         ConvexPoolContext = convexPoolContext;
-        BribesContext = bribesContext;
+        BribesV2Context = bribesV2Context;
         DashboardContext = dashboardContext;
         HttpClientFactory = httpClientFactory;
     }
@@ -42,7 +42,7 @@ public class Flyers
             .GetAllAsync()
             .Map(toList);
 
-        var epochs = await BribesContext.GetAllAsync(
+        var epochs = await BribesV2Context.GetAllAsync(
             Platform.Votium.ToPlatformString(),
             Protocol.ConvexCrv.ToProtocolString());
 

@@ -18,13 +18,13 @@ public static class FlyerFactory
             IWeb3,
             Func<HttpClient>,
             Lst<Db.Convex.Pool>,
-            Db.Bribes.Epoch,
+            Db.Bribes.EpochV2,
             EitherAsync<Error, Db.Convex.Flyer>>
         CreateFlyerConvex = fun((
             IWeb3 web3,
             Func<HttpClient> httpFactory,
             Lst<Db.Convex.Pool> pools,
-            Db.Bribes.Epoch latestFinishedEpoch) =>
+            Db.Bribes.EpochV2 latestFinishedEpoch) =>
         {
             // Coingecko data.
             var caps_ = CoinGecko.GetData(
