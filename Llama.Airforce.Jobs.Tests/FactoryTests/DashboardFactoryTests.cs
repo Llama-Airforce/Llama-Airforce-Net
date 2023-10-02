@@ -40,12 +40,15 @@ public class DashboardFactoryTests
             ScoresTotal = 1
         };
 
-        var data = new DashboardFactory.VotiumData(
+        var dataV1 = new DashboardFactory.VotiumDataV1(
+            new Lst<Epoch>());
+
+        var dataV2 = new DashboardFactory.VotiumDataV2(
             epochs,
             latestFinishedEpoch);
 
         // Act
-        var overview = await DashboardFactory.CreateOverviewVotium(logger, web3, http, data)
+        var overview = await DashboardFactory.CreateOverviewVotium(logger, web3, http, dataV1, dataV2)
             .MatchAsync(x => x, _ => throw new System.Exception());
 
         // Assert
@@ -68,12 +71,15 @@ public class DashboardFactoryTests
             ScoresTotal = 0
         };
 
-        var data = new DashboardFactory.VotiumData(
+        var dataV1 = new DashboardFactory.VotiumDataV1(
+            new Lst<Epoch>());
+
+        var dataV2 = new DashboardFactory.VotiumDataV2(
             epochs,
             latestFinishedEpoch);
 
         // Act
-        var overview = await DashboardFactory.CreateOverviewVotium(logger, web3, http, data);
+        var overview = await DashboardFactory.CreateOverviewVotium(logger, web3, http, dataV1, dataV2);
 
         // Assert
         Assert.IsTrue(overview.IsLeft && overview.LeftToList().First().Message == "Total scores is zero");

@@ -40,18 +40,27 @@ public class Dashboards
         [TimerTrigger("0 */15 * * * *", RunOnStartup = false)] TimerInfo dashboardsTimer)
     {
         // Get Votium data.
-        var epochsVotium = await BribesV2Context
+        var epochsVotiumV1 = await BribesContext
             .GetAllAsync(
                 Platform.Votium.ToPlatformString(),
                 Protocol.ConvexCrv.ToProtocolString())
             .Map(toList);
 
-        var latestFinishedEpochVotium = epochsVotium
+        var epochsVotiumV2 = await BribesV2Context
+           .GetAllAsync(
+                Platform.Votium.ToPlatformString(),
+                Protocol.ConvexCrv.ToProtocolString())
+           .Map(toList);
+
+        var latestFinishedEpochVotium = epochsVotiumV2
             .OrderBy(epoch => epoch.End)
             .Last(epoch => epoch.End <= DateTime.UtcNow.ToUnixTimeSeconds());
 
-        var votiumData = new DashboardFactory.VotiumData(
-            epochsVotium,
+        var votiumDataV1 = new DashboardFactory.VotiumDataV1(
+            epochsVotiumV1);
+
+        var votiumDataV2 = new DashboardFactory.VotiumDataV2(
+            epochsVotiumV2,
             latestFinishedEpochVotium);
 
         // Get Aura data.
@@ -74,7 +83,8 @@ public class Dashboards
             Web3,
             HttpClientFactory.CreateClient,
             DashboardContext,
-            votiumData,
+            votiumDataV1,
+            votiumDataV2,
             auraData);
     }
 }
