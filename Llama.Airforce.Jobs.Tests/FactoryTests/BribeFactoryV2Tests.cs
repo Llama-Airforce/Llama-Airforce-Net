@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Llama.Airforce.Domain.Models;
 using Llama.Airforce.Jobs.Extensions;
 using Llama.Airforce.Jobs.Factories;
 using Llama.Airforce.Jobs.Functions;
@@ -57,7 +58,7 @@ public class BribeFactoryV2Tests
         });
 
         // Act
-        var bribeFunctions = BribesV2Factory.GetBribesFunctions(http);
+        var bribeFunctions = BribesV2Factory.GetBribesFunctions(Protocol.ConvexCrv, http);
 
         var proposalIds = await bribeFunctions.GetProposalIds()
             .MatchAsync(x => x, _ => throw new Exception());
@@ -74,6 +75,7 @@ public class BribeFactoryV2Tests
                 web3,
                 new BribesV2Factory.OptionsProcessEpoch(
                     bribeFunctions,
+                    Protocol.ConvexCrv,
                     proposalIds,
                     epoch,
                     gauges,

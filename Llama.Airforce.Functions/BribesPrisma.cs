@@ -9,7 +9,7 @@ using static LanguageExt.Prelude;
 
 namespace Llama.Airforce.Functions;
 
-public class Bribes
+public class BribesPrisma
 {
     private readonly ILogger Logger;
     private readonly IConfiguration Config;
@@ -19,14 +19,14 @@ public class Bribes
     private readonly BribesV2Context BribesV2Context;
     private readonly IHttpClientFactory HttpClientFactory;
 
-    public Bribes(
+    public BribesPrisma(
         ILoggerFactory loggerFactory,
         IConfiguration config,
         IEnumerable<IWeb3> web3,
         BribesV2Context bribesV2Context,
         IHttpClientFactory httpClientFactory)
     {
-        Logger = loggerFactory.CreateLogger<Bribes>();
+        Logger = loggerFactory.CreateLogger<BribesPrisma>();
         Config = config;
 
         var webs = web3.ToArray();
@@ -36,7 +36,7 @@ public class Bribes
         HttpClientFactory = httpClientFactory;
     }
 
-    [Function("Bribes")]
+    [Function("BribesPrisma")]
     public async Task Run(
         [TimerTrigger("0 */15 * * * *", RunOnStartup = false)] TimerInfo bribeTimer)
     {
@@ -47,7 +47,7 @@ public class Bribes
             BribesV2Context,
             HttpClientFactory.CreateClient,
             Web3ETH,
-            new BribesV2Factory.OptionsGetBribes(Protocol.ConvexCrv, lastEpochOnly),
+            new BribesV2Factory.OptionsGetBribes(Protocol.ConvexPrisma, lastEpochOnly),
             None);
     }
 }

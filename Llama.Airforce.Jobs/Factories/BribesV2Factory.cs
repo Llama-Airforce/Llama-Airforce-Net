@@ -21,6 +21,7 @@ namespace Llama.Airforce.Jobs.Factories;
 public static class BribesV2Factory
 {
     public record OptionsGetBribes(
+        Protocol Protocol,
         bool LastEpochOnly);
 
     public record BribesFunctions(
@@ -29,17 +30,31 @@ public static class BribesV2Factory
         Func<EitherAsync<Error, Lst<Dom.EpochV2>>> GetEpochs,
         Func<string, EitherAsync<Error, Lst<Snap.Vote>>> GetVotes,
         Func<Lst<Address>, BigInteger, EitherAsync<Error, Map<Address, double>>> GetScores,
-        Func<EitherAsync<Error, Map<Address, CurveApi.Gauge>>> GetGauges);
+        Func<EitherAsync<Error, Map<string, string>>> GetGauges);
 
     public static BribesFunctions GetBribesFunctions(
+        Protocol protocol,
         Func<HttpClient> httpFactory) =>
-        new(
-            Snapshots.Convex.GetProposalIdsV2.Par(httpFactory),
-            Snapshots.Snapshot.GetProposal.Par(httpFactory),
-            Subgraphs.Votium.GetEpochsV2.Par(httpFactory),
-            Snapshots.Snapshot.GetVotes.Par(httpFactory),
-            Snapshots.Convex.GetScores.Par(httpFactory),
-            CurveApi.GetGauges.Par(httpFactory));
+        protocol switch
+        {
+            Protocol.ConvexCrv => new(
+                Snapshots.Convex.GetProposalIdsV2.Par(httpFactory),
+                Snapshots.Snapshot.GetProposal.Par(httpFactory),
+                Subgraphs.Votium.GetEpochsV2.Par(httpFactory).Par(Protocol.ConvexCrv),
+                Snapshots.Snapshot.GetVotes.Par(httpFactory),
+                Snapshots.Convex.GetScores.Par(httpFactory),
+                CurveApi.GetGaugesGaugeToShortName.Par(httpFactory)),
+
+            Protocol.ConvexPrisma => new(
+                Snapshots.Convex.GetProposalIdsPrisma.Par(httpFactory),
+                Snapshots.Snapshot.GetProposal.Par(httpFactory),
+                Subgraphs.Votium.GetEpochsV2.Par(httpFactory).Par(Protocol.ConvexPrisma),
+                Snapshots.Snapshot.GetVotes.Par(httpFactory),
+                Snapshots.Convex.GetScores.Par(httpFactory),
+                PrismaApi.GetGauges.Par(httpFactory)),
+
+            _ => throw new Exception($"Unsupported protocol")
+        };
 
     public static Func<
             ILogger,
@@ -55,14 +70,18 @@ public static class BribesV2Factory
             OptionsGetBribes options,
             Func<long, Address, string, EitherAsync<Error, double>> getPrice) =>
         {
-            var bribeFunctions = GetBribesFunctions(httpFactory);
+            var bribeFunctions = GetBribesFunctions(
+                options.Protocol,
+                httpFactory);
 
             var proposalIds_ = bribeFunctions.GetProposalIds();
             var epochs_ = bribeFunctions.GetEpochs();
             var gauges_ = bribeFunctions.GetGauges();
 
-            // Votium V2 rounds start with 51. To be determined.
+            // Votium V2 rounds start with 51 for Curve.
             var indexOffset = 51;
+            if (options is { Protocol: Protocol.ConvexPrisma })
+                indexOffset = 0;
 
             EitherAsync<Error, EitherAsync<Error, Lst<Db.Bribes.EpochV2>>> dbEpochs;
             if (options.LastEpochOnly)
@@ -79,6 +98,7 @@ public static class BribesV2Factory
                             web3,
                             new OptionsProcessEpoch(
                                 bribeFunctions,
+                                options.Protocol,
                                 proposalIds,
                                 epoch,
                                 gauges,
@@ -99,6 +119,7 @@ public static class BribesV2Factory
                             web3,
                             new OptionsProcessEpoch(
                                 bribeFunctions,
+                                options.Protocol,
                                 proposalIds,
                                 epoch,
                                 gauges,
@@ -113,9 +134,10 @@ public static class BribesV2Factory
 
     public record OptionsProcessEpoch(
         BribesFunctions BribesFunctions,
+        Protocol Protocol,
         Map<string, (int Index, string Title)> ProposalIds,
         Dom.EpochV2 Epoch,
-        Map<Address, CurveApi.Gauge> Gauges,
+        Map<string, string> Gauges,
         int Index);
 
     public static Func<
@@ -132,14 +154,18 @@ public static class BribesV2Factory
         {
             var epochId = EpochId.Create(
                 StringMax.Of(Platform.Votium.ToPlatformString()),
-                StringMax.Of(Protocol.ConvexCrv.ToProtocolString()),
+                StringMax.Of(options.Protocol.ToProtocolString()),
                 options.Index + 1);
 
             logger.LogInformation($"Updating bribes: {epochId}");
 
-            // Find proposal id my regex matching all proposal titles with the correct date.
+            // Find proposal id by regex matching all proposal titles with the correct date.
             var epoch = options.Epoch;
-            var epochStart = 1348 * 86400 * 14 + epoch.Round * 86400 * 14;
+
+            var epochStart = options.Protocol == Protocol.ConvexCrv
+                ? 1348 * 86400 * 14 + epoch.Round * 86400 * 14
+                : 1348 * 86400 * 14 + (epoch.Round + 57) * 86400 * 14; // Prisma started at curve epoch 57.
+
             var epochDate = DateTimeExt.FromUnixTimeSeconds(epochStart);
             var epochMonth = epochDate.ToString("MMM", CultureInfo.InvariantCulture);
             var titleRegex = $"{epochDate.Day}(st|nd|rd|th) {epochMonth} {epochDate.Year}";
@@ -167,6 +193,8 @@ public static class BribesV2Factory
                 from bribes in bribes_
                 select bribes
                     .Distinct()
+                    // Filter out the Prisma exception.
+                    .Where(bribe => bribe.Choice != -1)
                     .Map(bribe => (
                         Pool: proposal.Choices[bribe.Choice],
                         // We need to undo the Snapshot index offset.
@@ -228,7 +256,7 @@ public static class BribesV2Factory
                    select new Db.Bribes.EpochV2
                    {
                        Platform = Platform.Votium.ToPlatformString(),
-                       Protocol = Protocol.ConvexCrv.ToProtocolString(),
+                       Protocol = options.Protocol.ToProtocolString(),
                        Round = options.Index + 1,
                        End = proposal.End,
                        Proposal = proposal.Id,
@@ -242,7 +270,7 @@ public static class BribesV2Factory
             ILogger,
             IWeb3,
             Snap.Proposal,
-            Map<Address, CurveApi.Gauge>,
+            Map<string, string>,
             Func<Address, string, EitherAsync<Error, double>>,
             Dom.BribeV2,
             EitherAsync<Error, Db.Bribes.BribeV2>>
@@ -250,33 +278,34 @@ public static class BribesV2Factory
             ILogger logger,
             IWeb3 web3,
             Snap.Proposal proposal,
-            Map<Address, CurveApi.Gauge> gauges,
+            Map<string, string> gauges,
             Func<Address, string, EitherAsync<Error, double>> getPrice,
             Dom.BribeV2 bribe) =>
         {
             var tokenAddress = Address.Of(bribe.Token);
-            var gaugeAddress = Address.Of(bribe.Gauge)
-               .ToEither(Error.New("Invalid gauge address"))
-               .ToAsync();
-
             var token_ = Contracts.ERC20.GetSymbol(web3, tokenAddress).ToEitherAsync();
             var decimals_ = Contracts.ERC20.GetDecimals(web3, tokenAddress).ToEitherAsync();
 
             var amount_ = decimals_.Map(decimals => BigInteger.Parse(bribe.Amount).DivideByDecimals(decimals));
             var maxPerVote_ = decimals_.Map(decimals => BigInteger.Parse(bribe.MaxPerVote).DivideByDecimals(decimals));
-            var gauge_ = gaugeAddress.Bind(ga => gauges
-               .Find(ga)
-               .ToEither(Error.New($"Could not find pool name for gauge '{ga.Value}'"))
-               .ToAsync());
+            var gauge_ = gauges
+               .Find(bribe.Gauge)
+               .ToEither(Error.New($"Could not find pool name for gauge '{bribe.Gauge}'"))
+               .ToAsync();
 
             var choice_ = gauge_.Bind(gauge =>
             {
                 var index = proposal
                    .Choices
-                   .FindIndex(gauge.ShortName.StartsWith);
+                   .FindIndex(gauge.StartsWith);
+
+                // Exception for first round of Prisma.
+                if (proposal.Id == "0x22f178f7eb3af9f69a55ade29bfe6d48f754de8e5723e16f778adee09da6f985"&&
+                    gauge.StartsWith("Prisma mkPRISMA-f"))
+                    return -1;
 
                 return index == -1
-                    ? EitherAsync<Error, int>.Left($"Choice index was not found for gauge '{gauge.ShortName}'")
+                    ? EitherAsync<Error, int>.Left($"Choice index was not found for gauge '{gauge}'")
                     : EitherAsync<Error, int>.Right(index);
             });
 
@@ -300,10 +329,10 @@ public static class BribesV2Factory
                 from maxPerVote in maxPerVote_
                 select new Db.Bribes.BribeV2
                 {
-                    Pool = gauge.ShortName,
+                    Pool = gauge,
                     Token = token,
                     Choice = choice,
-                    Gauge = gauge.Address,
+                    Gauge = bribe.Gauge,
                     Amount = amount,
                     AmountDollars = amount * price,
                     MaxPerVote = maxPerVote,

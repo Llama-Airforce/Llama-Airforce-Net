@@ -1,5 +1,6 @@
 ﻿using System.Net.Http;
 using System.Threading.Tasks;
+using Llama.Airforce.Domain.Models;
 using Llama.Airforce.Jobs.Subgraphs;
 using NUnit.Framework;
 
@@ -28,7 +29,7 @@ public class VotiumTests
         HttpClient http() => new();
 
         // Act
-        var data = await Votium.GetEpochsV2(http)
+        var data = await Votium.GetEpochsV2(http, Protocol.ConvexCrv)
            .MatchAsync(x => x, _ => throw new System.Exception());
 
         // Assert

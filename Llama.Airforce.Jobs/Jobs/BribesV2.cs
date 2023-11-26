@@ -71,7 +71,7 @@ public class BribesV2
 
                             var epochId = EpochId.Create(
                                 StringMax.Of(Platform.Votium.ToPlatformString()),
-                                StringMax.Of(Protocol.ConvexCrv.ToProtocolString()),
+                                StringMax.Of(options.Protocol.ToProtocolString()),
                                 epoch.Round);
 
                             logger.LogInformation($"Updated bribes: {epochId}");

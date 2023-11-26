@@ -53,4 +53,25 @@ public static class CurveApi
                     return acc.AddOrUpdate(address, _ => gauge, gauge);
                 }));
         });
+
+    /// <summary>
+    /// Maps the Map<Address, Gauge> to a Map<string, string>
+    /// </summary>
+    public static Func<
+            Func<HttpClient>,
+            EitherAsync<Error, Map<string, string>>>
+        GetGaugesGaugeToShortName = fun((
+            Func<HttpClient> httpFactory) =>
+        {
+            return GetGauges(httpFactory)
+               .Map(gauges =>
+                {
+                    var newMap = Map<string, string>();
+
+                    foreach (var (address, gauge) in gauges)
+                        newMap = newMap.AddOrUpdate(address, _ => gauge.ShortName, gauge.ShortName);
+
+                    return newMap;
+                });
+        });
 }
