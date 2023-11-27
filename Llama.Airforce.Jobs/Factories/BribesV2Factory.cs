@@ -185,6 +185,9 @@ public static class BribesV2Factory
                     .Map(par(ProcessBribe, logger, web3, proposal, options.Gauges, par(getPrice, proposal.End)))
                     // Transform the list of tasks to a task of a list.
                     .SequenceSerial()
+                    // Filter out the Prisma exception.
+                    .Map(bs => bs
+                       .Where(bribe => bribe.Choice != -1))
                     .Map(toList);
             });
 
@@ -193,8 +196,6 @@ public static class BribesV2Factory
                 from bribes in bribes_
                 select bribes
                     .Distinct()
-                    // Filter out the Prisma exception.
-                    .Where(bribe => bribe.Choice != -1)
                     .Map(bribe => (
                         Pool: proposal.Choices[bribe.Choice],
                         // We need to undo the Snapshot index offset.
