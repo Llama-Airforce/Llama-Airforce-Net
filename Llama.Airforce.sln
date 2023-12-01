@@ -15,7 +15,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Llama.Airforce.Functions", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Llama.Airforce.Jobs", "Llama.Airforce.Jobs\Llama.Airforce.Jobs.csproj", "{CFA6C4E5-DF8B-4C1D-9583-9955DC914128}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Llama.Airforce.Domain", "Llama.Airforce.Domain\Llama.Airforce.Domain.csproj", "{42FACB13-4305-4032-9849-4527980AE663}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Llama.Airforce.Domain", "Llama.Airforce.Domain\Llama.Airforce.Domain.csproj", "{42FACB13-4305-4032-9849-4527980AE663}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Llama.Airforce.Cron", "Llama.Airforce.Cron\Llama.Airforce.Cron.csproj", "{20C618EF-363E-49BF-9BBF-23DB264349B1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +53,10 @@ Global
 		{42FACB13-4305-4032-9849-4527980AE663}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{42FACB13-4305-4032-9849-4527980AE663}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{42FACB13-4305-4032-9849-4527980AE663}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20C618EF-363E-49BF-9BBF-23DB264349B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20C618EF-363E-49BF-9BBF-23DB264349B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20C618EF-363E-49BF-9BBF-23DB264349B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20C618EF-363E-49BF-9BBF-23DB264349B1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
