@@ -71,8 +71,7 @@ public static class PrismaApi
                         shortName = shortName
                            .Replace("Wrapped ", "")
                            .Replace(" Deposit", "")
-                           .Replace("Factory Crypto Pool", "")
-                           .Replace("cvxPRISMA/PRISMA", "cvxPrisma/Prisma");
+                           .Replace("Factory Crypto Pool", "");
 
                         if (shortName == "Curve.fi : PRISMA/ETH")
                             shortName = "Prisma PRISMA/ETH Curve";
