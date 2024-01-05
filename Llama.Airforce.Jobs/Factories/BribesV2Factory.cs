@@ -81,7 +81,7 @@ public static class BribesV2Factory
             // Votium V2 rounds start with 51 for Curve.
             var indexOffset = 51;
             if (options is { Protocol: Protocol.ConvexPrisma })
-                indexOffset = 0;
+                indexOffset = 3; // Used to be 0, but votium contract was redeployed for round 4.
 
             EitherAsync<Error, EitherAsync<Error, Lst<Db.Bribes.EpochV2>>> dbEpochs;
             if (options.LastEpochOnly)
