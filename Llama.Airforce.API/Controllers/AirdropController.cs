@@ -78,7 +78,8 @@ public class AirdropController : ControllerBase
         Cache.Remove("union");
         Cache.Remove("ufxs");
         Cache.Remove("ucvx");
+        Cache.Remove("uprisma");
 
-        return Content("Cache cleared (union, ufxs, ucvx)");
+        return Content("Cache cleared (union, ufxs, ucvx, uprisma)");
     }
 }
