@@ -76,6 +76,9 @@ public static class PrismaApi
                         if (shortName == "Curve.fi : PRISMA/ETH")
                             shortName = "Prisma PRISMA/ETH Curve";
 
+                        // Add gauge id to the end in brackets without space.
+                        shortName = $"{shortName}({gaugeId})";
+
                         return acc.AddOrUpdate(gaugeId, _ => shortName, shortName);
                     }));
         });
