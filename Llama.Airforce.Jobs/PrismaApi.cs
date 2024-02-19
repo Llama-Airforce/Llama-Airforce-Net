@@ -80,6 +80,7 @@ public static class PrismaApi
                         shortName = $"{shortName}({gaugeId})";
 
                         return acc.AddOrUpdate(gaugeId, _ => shortName, shortName);
-                    }));
+                    })
+                   .AddOrUpdate("99", "mkUSD/PYUSDUSDC Convex(TBD)"));
         });
 }
