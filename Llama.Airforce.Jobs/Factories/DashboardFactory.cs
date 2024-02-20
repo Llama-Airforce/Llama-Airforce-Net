@@ -82,9 +82,7 @@ public static class DashboardFactory
             var dollarPerVlCvx = totalBribes / totalBribed;
 
             var crvPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Curve.Token, Network.Ethereum, Some(web3));
-            var cvxPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Convex.Token, Network.Ethereum, Some(web3));
 
-            var cvxPerCrv_ = Convex.GetCvxMintAmount(web3, 1).ToEitherAsync();
             var crvPerDay_ = Curve.GetRate(web3).DivideByDecimals(Convex.CurveDecimals).Map(x => x * 86400).ToEitherAsync();
             var votingPower_ = Curve.GetVotingPower(web3, Addresses.Convex.VoterProxy).ToEitherAsync();
 
@@ -101,10 +99,8 @@ public static class DashboardFactory
 
             var rewardPerDollarBribe_ =
                 from crvPrice in crvPrice_
-                from cvxPrice in cvxPrice_
-                from cvxPerCrv in cvxPerCrv_
                 from crvPerCvxPerRound in crvPerCvxPerRound_
-                select crvPerCvxPerRound / dollarPerVlCvx * (crvPrice + cvxPerCrv * cvxPrice);
+                select crvPerCvxPerRound / dollarPerVlCvx * crvPrice;
 
             var epochOverviewsV1 = dataV1
                .Epochs
