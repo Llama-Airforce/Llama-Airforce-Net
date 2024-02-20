@@ -104,7 +104,7 @@ public static class DashboardFactory
                 from cvxPrice in cvxPrice_
                 from cvxPerCrv in cvxPerCrv_
                 from crvPerCvxPerRound in crvPerCvxPerRound_
-                select crvPerCvxPerRound / dollarPerVlCvx * (crvPrice + cvxPerCrv * cvxPrice) * (1 - Convex.RewardFee);
+                select crvPerCvxPerRound / dollarPerVlCvx * (crvPrice + cvxPerCrv * cvxPrice);
 
             var epochOverviewsV1 = dataV1
                .Epochs
