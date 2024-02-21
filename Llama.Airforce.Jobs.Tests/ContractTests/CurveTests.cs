@@ -67,7 +67,7 @@ public class CurveTests
         var web3 = new Web3(alchemy);
 
         // Act
-        var votingPower = await Curve.GetVotingPower(web3, Addresses.Convex.VoterProxy);
+        var votingPower = await Curve.GetVotingPower(web3, Addresses.Convex.VoterProxyCurve);
 
         // Assert
     }

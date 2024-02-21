@@ -71,7 +71,7 @@ public class ERC20Tests
         var balanceOf = await ERC20.GetBalanceOf(
             web3,
             Addresses.Curve.VotingEscrow,
-            Addresses.Convex.VoterProxy);
+            Addresses.Convex.VoterProxyCurve);
 
         // Assert
     }

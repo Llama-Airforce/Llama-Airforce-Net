@@ -67,7 +67,7 @@ public static class FlyerFactory
             var revenueMonthly = 535_500_000 / ((DateTime.Now - Convex.Genesis).Days / (365.25 / 12));
 
             var cvxVotingPercentage_ = Curve
-                .GetVotingPower(web3, Addresses.Convex.VoterProxy)
+                .GetVotingPower(web3, Addresses.Convex.VoterProxyCurve)
                 .Map(x => x * 100)
                 .ToEitherAsync();
 

@@ -20,47 +20,62 @@ public static class DashboardFactory
         Lst<Db.Bribes.EpochV2> Epochs,
         Db.Bribes.EpochV2 LatestFinishedEpoch);
 
+    public record PrismaData(
+        Lst<Db.Bribes.EpochV2> Epochs,
+        Db.Bribes.EpochV2 LatestFinishedEpoch);
+
     public record AuraData(
         Lst<Db.Bribes.Epoch> Epochs,
         Db.Bribes.Epoch LatestFinishedEpoch);
+
+    public record Data(
+        VotiumDataV1 VotiumDataV1,
+        VotiumDataV2 VotiumDataV2,
+        PrismaData PrismaData,
+        AuraData AuraData);
 
     public static Func<
             ILogger,
             IWeb3,
             Func<HttpClient>,
-            VotiumDataV1,
-            VotiumDataV2,
-            AuraData,
+            Data,
             EitherAsync<Error, Lst<Database.Dashboard>>>
         CreateDashboards = fun((
             ILogger logger,
             IWeb3 web3,
             Func<HttpClient> httpFactory,
-            VotiumDataV1 votiumDataV1,
-            VotiumDataV2 votiumDataV2,
-            AuraData auraData) =>
+            Data data) =>
         {
             var overviewVotium_ =
                 CreateOverviewVotium(
                     logger,
                     web3,
                     httpFactory,
-                    votiumDataV1,
-                    votiumDataV2)
+                    data.VotiumDataV1,
+                    data.VotiumDataV2)
                 .Map(x => (Database.Dashboard)x);
+
+            var overviewPrisma_ =
+                CreateOverviewPrisma(
+                        logger,
+                        web3,
+                        httpFactory,
+                        data.PrismaData)
+                   .Map(x => (Database.Dashboard)x);
 
             var overviewAura_ =
                 CreateOverviewAura(
                     logger,
                     web3,
                     httpFactory,
-                    auraData)
+                    data.AuraData)
                 .Map(x => (Database.Dashboard)x);
 
             return
                 from overviewVotium in overviewVotium_
+                from overviewPrisma in overviewPrisma_
                 from overviewAura in overviewAura_
-                select List(overviewVotium, overviewAura);
+                select List(overviewVotium, overviewPrisma, overviewAura);
         });
 
     public static Func<
@@ -84,7 +99,7 @@ public static class DashboardFactory
             var crvPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Curve.Token, Network.Ethereum, Some(web3));
 
             var crvPerDay_ = Curve.GetRate(web3).DivideByDecimals(Convex.CurveDecimals).Map(x => x * 86400).ToEitherAsync();
-            var votingPower_ = Curve.GetVotingPower(web3, Addresses.Convex.VoterProxy).ToEitherAsync();
+            var votingPower_ = Curve.GetVotingPower(web3, Addresses.Convex.VoterProxyCurve).ToEitherAsync();
 
             var scoresTotal_ = dataV2.LatestFinishedEpoch.ScoresTotal > 0
                 ? RightAsync<Error, double>(dataV2.LatestFinishedEpoch.ScoresTotal)
@@ -153,6 +168,79 @@ public static class DashboardFactory
                 select new Db.Bribes.Dashboards.Overview
                 {
                     Id = Db.Bribes.Dashboards.Overview.Votium,
+                    RewardPerDollarBribe = rewardPerDollarBribe,
+                    Epochs = epochOverviews
+                };
+        });
+
+        public static Func<
+            ILogger,
+            IWeb3,
+            Func<HttpClient>,
+            PrismaData,
+            EitherAsync<Error, Db.Bribes.Dashboards.Overview>>
+        CreateOverviewPrisma = fun((
+            ILogger logger,
+            IWeb3 web3,
+            Func<HttpClient> httpFactory,
+            PrismaData data) =>
+        {
+            var totalBribes = data.LatestFinishedEpoch.Bribes.Sum(bribe => bribe.AmountDollars);
+            var totalBribed = data.LatestFinishedEpoch.Bribed.Sum(bribed => bribed.Value);
+            var dollarPerVlCvx = totalBribes / totalBribed;
+
+            var prismaPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Prisma.Token, Network.Ethereum, Some(web3));
+
+            var prismaPerDay_ = 
+                from week in Prisma.GetWeek(web3).ToEitherAsync()
+                from emissions in Prisma.GetWeeklyEmissions(web3, week).ToEitherAsync()
+                select emissions.DivideByDecimals(18) / 7;
+
+            var votingPower_ = Prisma.GetVotingPower(web3, Addresses.Convex.VoterProxyPrisma).ToEitherAsync();
+
+            var scoresTotal_ = data.LatestFinishedEpoch.ScoresTotal > 0
+                ? RightAsync<Error, double>(data.LatestFinishedEpoch.ScoresTotal)
+                : LeftAsync<Error, double>(Error.New("Total scores is zero"));
+
+            // https://docs.google.com/spreadsheets/d/1SCO33fU-4EglqD9h191c5z3curC3SqJP-yshA1MjVqE/edit#gid=0
+            var prismaPerCvxPerRound_ =
+                from prismaPerDay in prismaPerDay_
+                from votingPower in votingPower_
+                from scoresTotal in scoresTotal_
+                select prismaPerDay * 14 * votingPower / scoresTotal;
+
+            var rewardPerDollarBribe_ =
+                from prismaPrice in prismaPrice_
+                from prismaPerCvxPerRound in prismaPerCvxPerRound_
+                select prismaPerCvxPerRound / dollarPerVlCvx * prismaPrice;
+
+            var epochOverviews = data
+               .Epochs
+               .Map(epoch =>
+                {
+                    var totalAmountDollars = epoch.Bribes.Sum(bribe => bribe.AmountDollars);
+                    var totalAmountBribed = epoch.Bribed.Values.Sum();
+
+                    return new Db.Bribes.EpochOverview
+                    {
+                        Platform = epoch.Platform,
+                        Protocol = epoch.Protocol,
+                        Round = epoch.Round,
+                        Proposal = epoch.Proposal,
+                        End = epoch.End,
+                        TotalAmountDollars = totalAmountDollars,
+                        DollarPerVlAsset = totalAmountBribed > 0
+                            ? totalAmountDollars / totalAmountBribed
+                            : 0
+                    };
+                })
+               .ToList();
+
+            return
+                from rewardPerDollarBribe in rewardPerDollarBribe_
+                select new Db.Bribes.Dashboards.Overview
+                {
+                    Id = Db.Bribes.Dashboards.Overview.Prisma,
                     RewardPerDollarBribe = rewardPerDollarBribe,
                     Epochs = epochOverviews
                 };

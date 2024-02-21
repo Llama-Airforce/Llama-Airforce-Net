@@ -14,20 +14,16 @@ public class Dashboards
             IWeb3,
             Func<HttpClient>,
             DashboardContext,
-            DashboardFactory.VotiumDataV1,
-            DashboardFactory.VotiumDataV2,
-            DashboardFactory.AuraData,
+            DashboardFactory.Data,
             Task>
         UpdateDashboards = fun((
             ILogger logger,
             IWeb3 web3,
             Func<HttpClient> httpFactory,
             DashboardContext context,
-            DashboardFactory.VotiumDataV1 votiumDataV1,
-            DashboardFactory.VotiumDataV2 votiumDataV2,
-            DashboardFactory.AuraData auraData) =>
+            DashboardFactory.Data data) =>
         DashboardFactory
-            .CreateDashboards(logger, web3, httpFactory, votiumDataV1, votiumDataV2, auraData)
+            .CreateDashboards(logger, web3, httpFactory, data)
             .MatchAsync(
                 RightAsync: async dashboards =>
                 {

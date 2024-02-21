@@ -63,6 +63,21 @@ public class Dashboards
             epochsVotiumV2,
             latestFinishedEpochVotium);
 
+        // Get Prisma data.
+        var epochsPrisma = await BribesV2Context
+           .GetAllAsync(
+                Platform.Votium.ToPlatformString(),
+                Protocol.ConvexPrisma.ToProtocolString())
+           .Map(toList);
+
+        var latestFinishedEpochPrisma = epochsPrisma
+           .OrderBy(epoch => epoch.End)
+           .Last(epoch => epoch.End <= DateTime.UtcNow.ToUnixTimeSeconds());
+
+        var prismaData = new DashboardFactory.PrismaData(
+            epochsPrisma,
+            latestFinishedEpochPrisma);
+
         // Get Aura data.
         var epochsAura = await BribesContext
             .GetAllAsync(
@@ -78,13 +93,17 @@ public class Dashboards
             epochsAura,
             latestFinishedEpochAura);
 
+        var data = new DashboardFactory.Data(
+            votiumDataV1,
+            votiumDataV2,
+            prismaData,
+            auraData);
+
         await Jobs.Jobs.Dashboards.UpdateDashboards(
             Logger,
             Web3,
             HttpClientFactory.CreateClient,
             DashboardContext,
-            votiumDataV1,
-            votiumDataV2,
-            auraData);
+            data);
     }
 }
