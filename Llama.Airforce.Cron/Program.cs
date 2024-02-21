@@ -1,4 +1,5 @@
-﻿using Llama.Airforce.Database.Contexts;
+﻿using LanguageExt;
+using Llama.Airforce.Database.Contexts;
 using Llama.Airforce.Domain.Models;
 using Llama.Airforce.Jobs.Extensions;
 using Llama.Airforce.Jobs.Factories;
@@ -33,7 +34,10 @@ var serviceProvider = new ServiceCollection()
 
 var logger = serviceProvider.GetService<ILogger<Program>>();
 var httpFactory = serviceProvider.GetService<IHttpClientFactory>();
+
+var bribesContext = serviceProvider.GetService<BribesContext>();
 var bribesV2Context = serviceProvider.GetService<BribesV2Context>();
+var dashboardContext = serviceProvider.GetService<DashboardContext>();
 
 logger.LogInformation("Cronjobs starting...");
 
@@ -54,5 +58,72 @@ await Llama.Airforce.Jobs.Jobs.BribesV2.UpdateBribes(
     web3ETH,
     new BribesV2Factory.OptionsGetBribes(Protocol.ConvexCrv, true),
     None);
+
+// Get Votium data.
+var epochsVotiumV1 = await bribesContext
+    .GetAllAsync(
+        Platform.Votium.ToPlatformString(),
+        Protocol.ConvexCrv.ToProtocolString())
+    .Map(toList);
+
+var epochsVotiumV2 = await bribesV2Context
+   .GetAllAsync(
+        Platform.Votium.ToPlatformString(),
+        Protocol.ConvexCrv.ToProtocolString())
+   .Map(toList);
+
+var latestFinishedEpochVotium = epochsVotiumV2
+    .OrderBy(epoch => epoch.End)
+    .Last(epoch => epoch.End <= DateTime.UtcNow.ToUnixTimeSeconds());
+
+var votiumDataV1 = new DashboardFactory.VotiumDataV1(
+    epochsVotiumV1);
+
+var votiumDataV2 = new DashboardFactory.VotiumDataV2(
+    epochsVotiumV2,
+    latestFinishedEpochVotium);
+
+// Get Prisma data.
+var epochsPrisma = await bribesV2Context
+   .GetAllAsync(
+        Platform.Votium.ToPlatformString(),
+        Protocol.ConvexPrisma.ToProtocolString())
+   .Map(toList);
+
+var latestFinishedEpochPrisma = epochsPrisma
+   .OrderBy(epoch => epoch.End)
+   .Last(epoch => epoch.End <= DateTime.UtcNow.ToUnixTimeSeconds());
+
+var prismaData = new DashboardFactory.PrismaData(
+    epochsPrisma,
+    latestFinishedEpochPrisma);
+
+// Get Aura data.
+var epochsAura = await bribesContext
+    .GetAllAsync(
+        Platform.HiddenHand.ToPlatformString(),
+        Protocol.AuraBal.ToProtocolString())
+    .Map(toList);
+
+var latestFinishedEpochAura = epochsAura
+    .OrderBy(epoch => epoch.End)
+    .Last(epoch => epoch.End <= DateTime.UtcNow.ToUnixTimeSeconds());
+
+var auraData = new DashboardFactory.AuraData(
+    epochsAura,
+    latestFinishedEpochAura);
+
+var data = new DashboardFactory.Data(
+    votiumDataV1,
+    votiumDataV2,
+    prismaData,
+    auraData);
+
+await Llama.Airforce.Jobs.Jobs.Dashboards.UpdateDashboards(
+    logger,
+    web3ETH,
+    httpFactory.CreateClient,
+    dashboardContext,
+    data);
 
 logger.LogInformation("Cronjobs done");
