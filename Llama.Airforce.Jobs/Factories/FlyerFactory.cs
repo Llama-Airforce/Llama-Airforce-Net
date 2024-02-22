@@ -18,13 +18,13 @@ public static class FlyerFactory
             IWeb3,
             Func<HttpClient>,
             Lst<Db.Convex.Pool>,
-            Db.Bribes.EpochV2,
+            Lst<Db.Bribes.EpochV2>,
             EitherAsync<Error, Db.Convex.Flyer>>
         CreateFlyerConvex = fun((
             IWeb3 web3,
             Func<HttpClient> httpFactory,
             Lst<Db.Convex.Pool> pools,
-            Db.Bribes.EpochV2 latestFinishedEpoch) =>
+            Lst<Db.Bribes.EpochV2> latestFinishedEpochs) =>
         {
             // Coingecko data.
             var caps_ = CoinGecko.GetData(
@@ -37,11 +37,20 @@ public static class FlyerFactory
             var crvPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Curve.Token, Network.Ethereum, Some(web3));
 
             // Ethereum data.
-            var bribeIncomeBiWeekly = latestFinishedEpoch.Bribes.Sum(bribe => bribe.AmountDollars);
-            var cvxBribed = latestFinishedEpoch.Bribed.Sum(bribed => bribed.Value);
+            var bribeIncomeBiWeeklyTotal = latestFinishedEpochs
+               .Sum(epoch => epoch.Bribes.Sum(bribe => bribe.AmountDollars));
+
             var votiumApr_ =
                 from cvxPrice in cvxPrice_
-                select cvxBribed == 0 ? 0 : bribeIncomeBiWeekly / cvxBribed / (cvxPrice / 100) * BiWeeksPerYear;
+                select latestFinishedEpochs.Sum(epoch =>
+                {
+                    var bribeIncomeBiWeekly = epoch.Bribes.Sum(bribe => bribe.AmountDollars);
+                    var cvxBribed = epoch.Bribed.Sum(bribed => bribed.Value);
+
+                    return cvxBribed == 0
+                        ? 0
+                        : bribeIncomeBiWeekly / cvxBribed / (cvxPrice / 100) * BiWeeksPerYear;
+                });
 
             var cvxApr_ =
                 from lockedApr in Convex.GetLockedApr(httpFactory, web3)
@@ -90,8 +99,8 @@ public static class FlyerFactory
                     CvxMarketCap = caps.MCap,
                     CvxMarketCapFullyDiluted = caps.FDV,
 
-                    BribesIncomeAnnually = bribeIncomeBiWeekly * BiWeeksPerYear,
-                    BribesIncomeBiWeekly = bribeIncomeBiWeekly,
+                    BribesIncomeAnnually = bribeIncomeBiWeeklyTotal * BiWeeksPerYear,
+                    BribesIncomeBiWeekly = bribeIncomeBiWeeklyTotal,
 
                     CvxApr = cvxApr,
                     CvxCrvApr = cvxCrvApr

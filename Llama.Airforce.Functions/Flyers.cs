@@ -42,14 +42,22 @@ public class Flyers
             .GetAllAsync()
             .Map(toList);
 
-        var epochs = await BribesV2Context.GetAllAsync(
+        var epochsVotium = await BribesV2Context.GetAllAsync(
             Platform.Votium.ToPlatformString(),
             Protocol.ConvexCrv.ToProtocolString());
 
-        var latestFinishedEpoch = epochs
-            .Where(epoch => epoch.Platform == Platform.Votium.ToPlatformString())
+        var latestFinishedEpochVotium = epochsVotium
             .OrderBy(epoch => epoch.End)
             .Last(epoch => epoch.End <= DateTime.UtcNow.ToUnixTimeSeconds());
+
+        var epochsPrisma = await BribesV2Context
+           .GetAllAsync(
+                Platform.Votium.ToPlatformString(),
+                Protocol.ConvexPrisma.ToProtocolString());
+
+        var latestFinishedEpochPrisma = epochsPrisma
+           .OrderBy(epoch => epoch.End)
+           .Last(epoch => epoch.End <= DateTime.UtcNow.ToUnixTimeSeconds());
 
         await Jobs.Jobs.Flyers.UpdateFlyerConvex(
             Logger,
@@ -57,7 +65,7 @@ public class Flyers
             Web3,
             HttpClientFactory.CreateClient,
             poolsConvex,
-            latestFinishedEpoch);
+            List(latestFinishedEpochVotium, latestFinishedEpochPrisma));
 
         await Jobs.Jobs.Flyers.UpdateFlyerAura(
             Logger,

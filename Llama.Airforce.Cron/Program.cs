@@ -38,6 +38,7 @@ var httpFactory = serviceProvider.GetService<IHttpClientFactory>();
 var bribesContext = serviceProvider.GetService<BribesContext>();
 var bribesV2Context = serviceProvider.GetService<BribesV2Context>();
 var dashboardContext = serviceProvider.GetService<DashboardContext>();
+var convexPoolContext = serviceProvider.GetService<PoolContext>();
 
 logger.LogInformation("Cronjobs starting...");
 
@@ -125,5 +126,24 @@ await Llama.Airforce.Jobs.Jobs.Dashboards.UpdateDashboards(
     httpFactory.CreateClient,
     dashboardContext,
     data);
+
+// Update flyers
+var poolsConvex = await convexPoolContext
+   .GetAllAsync()
+   .Map(toList);
+
+await Llama.Airforce.Jobs.Jobs.Flyers.UpdateFlyerConvex(
+    logger,
+    dashboardContext,
+    web3ETH,
+    httpFactory.CreateClient,
+    poolsConvex,
+    List(latestFinishedEpochVotium, latestFinishedEpochPrisma));
+
+await Llama.Airforce.Jobs.Jobs.Flyers.UpdateFlyerAura(
+    logger,
+    dashboardContext,
+    web3ETH,
+    httpFactory.CreateClient);
 
 logger.LogInformation("Cronjobs done");
