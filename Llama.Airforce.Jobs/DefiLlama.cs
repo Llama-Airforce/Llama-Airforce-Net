@@ -47,7 +47,11 @@ public static class DefiLlama
         {
             var timestamp = date.Map(x => x.ToUnixTimeSeconds()).IfNone(0);
             var coin = $"{network.NetworkToString()}:{address}";
-            var url = $"{DEFILLAMA_PRICES_URL}/{timestamp}/{coin}";
+            var searchWidth = address == "0xe063f04f280c60aeca68b38341c2eecbec703ae2"
+                ? "?searchWidth=1w"
+                : "";
+
+            var url = $"{DEFILLAMA_PRICES_URL}/{timestamp}/{coin}{searchWidth}";
 
             return Functions
                 .HttpFunctions
