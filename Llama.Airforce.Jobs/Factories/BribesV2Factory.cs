@@ -53,6 +53,14 @@ public static class BribesV2Factory
                 Snapshots.Convex.GetScores.Par(httpFactory),
                 PrismaApi.GetGauges.Par(httpFactory)),
 
+            Protocol.ConvexFxn => new(
+                Snapshots.Convex.GetProposalIdsFxn.Par(httpFactory),
+                Snapshots.Snapshot.GetProposal.Par(httpFactory),
+                Subgraphs.Votium.GetEpochsV2.Par(httpFactory).Par(Protocol.ConvexFxn),
+                Snapshots.Snapshot.GetVotes.Par(httpFactory),
+                Snapshots.Convex.GetScores.Par(httpFactory),
+                FxnApi.GetGauges.Par(httpFactory)),
+
             _ => throw new Exception($"Unsupported protocol")
         };
 
@@ -82,6 +90,8 @@ public static class BribesV2Factory
             var indexOffset = 51;
             if (options is { Protocol: Protocol.ConvexPrisma })
                 indexOffset = 3; // Used to be 0, but votium contract was redeployed for round 4.
+            if (options is { Protocol: Protocol.ConvexFxn })
+                indexOffset = 0;
 
             EitherAsync<Error, EitherAsync<Error, Lst<Db.Bribes.EpochV2>>> dbEpochs;
             if (options.LastEpochOnly)
@@ -161,12 +171,7 @@ public static class BribesV2Factory
 
             // Find proposal id by regex matching all proposal titles with the correct date.
             var epoch = options.Epoch;
-
-            var epochStart = options.Protocol == Protocol.ConvexCrv
-                ? 1348 * 86400 * 14 + epoch.Round * 86400 * 14
-                : 1348 * 86400 * 14 + (epoch.Round + 57) * 86400 * 14; // Prisma started at curve epoch 57.
-
-            var epochDate = DateTimeExt.FromUnixTimeSeconds(epochStart);
+            var epochDate = Subgraphs.Votium.GetEpochDate(options.Protocol, epoch.Round);
             var epochMonth = epochDate.ToString("MMM", CultureInfo.InvariantCulture);
             var titleRegex = $"{epochDate.Day}(st|nd|rd|th) {epochMonth} {epochDate.Year}";
 

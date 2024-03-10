@@ -78,6 +78,21 @@ public class Dashboards
             epochsPrisma,
             latestFinishedEpochPrisma);
 
+        // Get f(x) data.
+        var epochsFxn = await BribesV2Context
+           .GetAllAsync(
+                Platform.Votium.ToPlatformString(),
+                Protocol.ConvexFxn.ToProtocolString())
+           .Map(toList);
+
+        var latestFinishedEpochFxn = epochsFxn
+           .OrderBy(epoch => epoch.End)
+           .Last(epoch => epoch.End <= DateTime.UtcNow.ToUnixTimeSeconds());
+
+        var fxnData = new DashboardFactory.FxnData(
+            epochsFxn,
+            latestFinishedEpochFxn);
+
         // Get Aura data.
         var epochsAura = await BribesContext
             .GetAllAsync(
@@ -97,6 +112,7 @@ public class Dashboards
             votiumDataV1,
             votiumDataV2,
             prismaData,
+            fxnData,
             auraData);
 
         await Jobs.Jobs.Dashboards.UpdateDashboards(

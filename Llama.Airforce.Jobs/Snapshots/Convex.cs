@@ -51,6 +51,16 @@ public class Convex
            .Par(_ => true)
            .Par(proposal => proposal.Title)());
 
+    public static Func<
+            Func<HttpClient>,
+            EitherAsync<Error, Map<string, (int Index, string Title)>>>
+        GetProposalIdsFxn = fun((Func<HttpClient> httpFactory) => Snapshot.GetProposalIds
+           .Par(httpFactory)
+           .Par(SPACE_CVX)
+           .Par(Some("FXN Gauge Weight for Week"))
+           .Par(_ => true)
+           .Par(proposal => proposal.Title)());
+
     /// <summary>
     /// Returns score for a list of voters at a certain block number.
     /// </summary>

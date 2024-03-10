@@ -42,6 +42,15 @@ var convexPoolContext = serviceProvider.GetService<PoolContext>();
 
 logger.LogInformation("Cronjobs starting...");
 
+// Update f(x) Protocol bribes.
+await Llama.Airforce.Jobs.Jobs.BribesV2.UpdateBribes(
+    logger,
+    bribesV2Context,
+    httpFactory.CreateClient,
+    web3ETH,
+    new BribesV2Factory.OptionsGetBribes(Protocol.ConvexFxn, true),
+    None);
+
 // Update Prisma bribes.
 await Llama.Airforce.Jobs.Jobs.BribesV2.UpdateBribes(
     logger,
@@ -99,6 +108,21 @@ var prismaData = new DashboardFactory.PrismaData(
     epochsPrisma,
     latestFinishedEpochPrisma);
 
+// Get f(x) Protocol data.
+var epochsFxn = await bribesV2Context
+   .GetAllAsync(
+        Platform.Votium.ToPlatformString(),
+        Protocol.ConvexFxn.ToProtocolString())
+   .Map(toList);
+
+var latestFinishedEpochFxn = epochsFxn
+   .OrderBy(epoch => epoch.End)
+   .Last(epoch => epoch.End <= DateTime.UtcNow.ToUnixTimeSeconds());
+
+var fxnData = new DashboardFactory.FxnData(
+    epochsFxn,
+    latestFinishedEpochFxn);
+
 // Get Aura data.
 var epochsAura = await bribesContext
     .GetAllAsync(
@@ -118,6 +142,7 @@ var data = new DashboardFactory.Data(
     votiumDataV1,
     votiumDataV2,
     prismaData,
+    fxnData,
     auraData);
 
 await Llama.Airforce.Jobs.Jobs.Dashboards.UpdateDashboards(

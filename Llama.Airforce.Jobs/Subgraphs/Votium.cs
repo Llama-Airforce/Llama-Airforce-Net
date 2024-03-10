@@ -14,6 +14,7 @@ public class Votium
     public const string SUBGRAPH_URL_VOTIUM = "https://api.thegraph.com/subgraphs/name/convex-community/votium-bribes";
     public const string SUBGRAPH_URL_VOTIUM_V2 = "https://api.thegraph.com/subgraphs/name/convex-community/votium-v2";
     public const string SUBGRAPH_URL_VOTIUM_PRISMA = "https://api.thegraph.com/subgraphs/name/convex-community/votium-prisma";
+    public const string SUBGRAPH_URL_VOTIUM_FXN = "https://api.thegraph.com/subgraphs/name/convex-community/fxn-subgraph";
 
     /// <summary>
     /// Returns Votium epoch & bribe history from The Graph
@@ -49,6 +50,23 @@ epoches(
                 .Select(epoch => (Dom.Epoch)epoch)));
     });
 
+    public static DateTime GetEpochDate(
+        Dom.Protocol protocol,
+        int round)
+    {
+        var epochStart = protocol switch
+        {
+            Dom.Protocol.ConvexCrv => 1348 * 86400 * 14 + round * 86400 * 14,
+            // Prisma started at curve epoch 57.
+            Dom.Protocol.ConvexPrisma => 1348 * 86400 * 14 + (round + 57) * 86400 * 14,
+            // f(x) Protocol started at curve epoch 66.
+            Dom.Protocol.ConvexFxn => 1348 * 86400 * 14 + (round + 65) * 86400 * 14
+        };
+
+        var epochDate = DateTimeExt.FromUnixTimeSeconds(epochStart);
+        return epochDate;
+    }
+
     /// <summary>
     /// Returns Votium epoch & bribe history from The Graph
     /// </summary>
@@ -78,9 +96,13 @@ rounds(
   }
 } }";
 
-            var url = protocol == Dom.Protocol.ConvexCrv
-                ? SUBGRAPH_URL_VOTIUM_V2
-                : SUBGRAPH_URL_VOTIUM_PRISMA;
+            var url = protocol switch
+            {
+                Dom.Protocol.ConvexCrv => SUBGRAPH_URL_VOTIUM_V2,
+                Dom.Protocol.ConvexPrisma => SUBGRAPH_URL_VOTIUM_PRISMA,
+                Dom.Protocol.ConvexFxn => SUBGRAPH_URL_VOTIUM_FXN,
+                _ => throw new ArgumentOutOfRangeException("Unsupported protocol")
+            };
 
             return Subgraph.GetData(httpFactory, url, Query)
                .MapTry(JsonConvert.DeserializeObject<RequestEpochsVotiumV2>)
@@ -90,11 +112,7 @@ rounds(
                     // Filter out epochs that haven't started yet.
                    .Where(epoch =>
                     {
-                        var epochStart = protocol == Dom.Protocol.ConvexCrv
-                            ? 1348 * 86400 * 14 + epoch.Id * 86400 * 14
-                            : 1348 * 86400 * 14 + (epoch.Id + 57) * 86400 * 14; // Prisma started at curve epoch 57.
-
-                        var epochDate = DateTimeExt.FromUnixTimeSeconds(epochStart);
+                        var epochDate = GetEpochDate(protocol, epoch.Id);
                         return epochDate <= DateTime.Now;
                     })
                    .Select(epoch => (Dom.EpochV2)epoch)));

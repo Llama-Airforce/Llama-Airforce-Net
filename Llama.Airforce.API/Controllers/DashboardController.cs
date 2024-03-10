@@ -42,6 +42,7 @@ public class DashboardController : ControllerBase
         {
             Overview.Votium => Context.GetAsync<Overview>(body.Id).Map(CreateResponse),
             Overview.Prisma => Context.GetAsync<Overview>(body.Id).Map(CreateResponse),
+            Overview.Fxn => Context.GetAsync<Overview>(body.Id).Map(CreateResponse),
             Overview.Aura => Context.GetAsync<Overview>(body.Id).Map(CreateResponse),
             Db.Convex.Flyer.ID => Context.GetAsync<Db.Convex.Flyer>(body.Id).Map(CreateResponse),
             Db.Aura.Flyer.ID => Context.GetAsync<Db.Aura.Flyer>(body.Id).Map(CreateResponse),
