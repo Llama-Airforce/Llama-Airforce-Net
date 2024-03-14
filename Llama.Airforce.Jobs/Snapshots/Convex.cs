@@ -38,7 +38,8 @@ public class Convex
            .Par(httpFactory)
            .Par(SPACE_CVX)
            .Par(Some("Gauge Weight for Week of"))
-           .Par(_ => true)
+            // We filter with StartsWith as otherwise the FXN gauge proposal also pops up.
+           .Par(proposal => proposal.Title.StartsWith("Gauge Weight"))
            .Par(proposal => proposal.Title)());
 
     public static Func<
