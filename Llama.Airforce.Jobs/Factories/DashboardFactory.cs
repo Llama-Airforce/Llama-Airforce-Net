@@ -68,13 +68,13 @@ public static class DashboardFactory
                         data.PrismaData)
                    .Map(x => (Database.Dashboard)x);
 
-            var overviewFxn_ =
-                CreateOverviewFxn(
-                        logger,
-                        web3,
-                        httpFactory,
-                        data.FxnData)
-                   .Map(x => (Database.Dashboard)x);
+            //var overviewFxn_ =
+            //    CreateOverviewFxn(
+            //            logger,
+            //            web3,
+            //            httpFactory,
+            //            data.FxnData)
+            //       .Map(x => (Database.Dashboard)x);
 
             var overviewAura_ =
                 CreateOverviewAura(
@@ -87,9 +87,9 @@ public static class DashboardFactory
             return
                 from overviewVotium in overviewVotium_
                 from overviewPrisma in overviewPrisma_
-                from overviewFxn in overviewFxn_
+                /*from overviewFxn in overviewFxn_*/
                 from overviewAura in overviewAura_
-                select List(overviewVotium, overviewPrisma, overviewFxn, overviewAura);
+                select List(overviewVotium, overviewPrisma, /*overviewFxn,*/ overviewAura);
         });
 
     public static Func<

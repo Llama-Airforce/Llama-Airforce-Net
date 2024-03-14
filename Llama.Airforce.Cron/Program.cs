@@ -1,5 +1,6 @@
 ﻿using LanguageExt;
 using Llama.Airforce.Database.Contexts;
+using Llama.Airforce.Database.Models.Bribes;
 using Llama.Airforce.Domain.Models;
 using Llama.Airforce.Jobs.Extensions;
 using Llama.Airforce.Jobs.Factories;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Nethereum.Web3;
 using static LanguageExt.Prelude;
+using EpochV2 = Llama.Airforce.Database.Models.Bribes.EpochV2;
 
 // Build configuration
 var configuration = new ConfigurationBuilder()
@@ -115,13 +117,14 @@ var epochsFxn = await bribesV2Context
         Protocol.ConvexFxn.ToProtocolString())
    .Map(toList);
 
-var latestFinishedEpochFxn = epochsFxn
-   .OrderBy(epoch => epoch.End)
-   .Last(epoch => epoch.End <= DateTime.UtcNow.ToUnixTimeSeconds());
+//var latestFinishedEpochFxn = epochsFxn
+//   .OrderBy(epoch => epoch.End)
+//   .Last(epoch => epoch.End <= DateTime.UtcNow.ToUnixTimeSeconds());
+// TODO
 
 var fxnData = new DashboardFactory.FxnData(
     epochsFxn,
-    latestFinishedEpochFxn);
+    new EpochV2());
 
 // Get Aura data.
 var epochsAura = await bribesContext
