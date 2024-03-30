@@ -59,7 +59,7 @@ epoches(
             Dom.Protocol.ConvexCrv => 1348 * 86400 * 14 + round * 86400 * 14,
             // Prisma started at curve epoch 57.
             Dom.Protocol.ConvexPrisma => 1348 * 86400 * 14 + (round + 57) * 86400 * 14,
-            // f(x) Protocol started at curve epoch 66.
+            // f(x) Protocol started at curve epoch 65.
             Dom.Protocol.ConvexFxn => 1348 * 86400 * 14 + (round + 65) * 86400 * 14
         };
 
