@@ -115,7 +115,8 @@ rounds(
                         var epochDate = GetEpochDate(protocol, epoch.Id);
                         return epochDate <= DateTime.Now;
                     })
-                   .Select(epoch => (Dom.EpochV2)epoch)));
+                   .Select(epoch => (Dom.EpochV2)epoch)
+                   .OrderBy(epoch => epoch.Round)));
         });
 
     /// <summary>
