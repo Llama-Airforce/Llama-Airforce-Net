@@ -36,10 +36,17 @@ public static class PriceFunctions
         {
             "USDM" => SomeAsync(1.0),
             "BB-A-USD" => SomeAsync(1.0),
-            "T" => web3.Match(w => GetCurveV2Price(httpFactory, w, Addresses.ERC20.T, None).ToOption(), () => None),
-            "eCFX" => web3.Match(w => GetCurveV2Price(httpFactory, w, Addresses.ERC20.eCFX, None).ToOption(), () => None),
-            "sdFXS" => web3.Match(w =>
-                GetCurveV1Price(httpFactory, w, Addresses.ERC20.sdFXS, Addresses.ERC20.FXS, true).ToOption(),
+            "T" => web3.Match(
+                w => GetCurveV2Price(httpFactory, w, Addresses.ERC20.T, None).ToOption(),
+                () => None),
+            "eCFX" => web3.Match(
+                w => GetCurveV2Price(httpFactory, w, Addresses.ERC20.eCFX, None).ToOption(),
+                () => None),
+            "sdFXS" => web3.Match(
+                w => GetCurveV1Price(httpFactory, w, Addresses.ERC20.sdFXS, Addresses.ERC20.FXS, true).ToOption(),
+                () => None),
+            "TXJP" => web3.Match(
+                w => GetTXJPPrice(httpFactory, w, Addresses.ERC20.TXJP, None).ToOption(),
                 () => None),
             _ => None
         });
@@ -230,5 +237,42 @@ public static class PriceFunctions
                 from bpt in bpt_
                 from discount in discount_
                 select bpt * discount;
+        });
+
+    /// <summary>
+    /// Returns the current price in dollars for a token by looking at its ETH Curve V2 LP.
+    /// </summary>
+    public static Func<
+            Func<HttpClient>,
+            IWeb3,
+            Address,
+            Option<Address>,
+            EitherAsync<Error, double>>
+        GetTXJPPrice = fun((
+            Func<HttpClient> httpFactory,
+            IWeb3 web3,
+            Address token,
+            Option<Address> tokenOther) =>
+        {
+            var priceOther_ = GetPriceExt(
+                httpFactory,
+                tokenOther.IfNone(Addresses.ERC20.WETH),
+                Network.Ethereum,
+                Some(web3),
+                None,
+                None);
+
+            var slot0_ = UniV3.GetSlot0(web3, Addresses.UniV3Pools.TXJPWETH).ToEitherAsync();
+
+            var price_ =
+                from slot0 in slot0_
+                from priceOther in priceOther_
+                let sqrtPriceX96 = slot0.SqrtPriceX96.DivideByDecimals(1)
+                select Math.Pow(sqrtPriceX96, 2) / Math.Pow(2, 192) / Math.Pow(10, 8);
+
+            return
+                from price in price_
+                from priceOther in priceOther_
+                select price * priceOther;
         });
 }

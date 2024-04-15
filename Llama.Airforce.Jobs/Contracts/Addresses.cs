@@ -11,6 +11,7 @@ public static class Addresses
         public static Address eCFX = Address.Of("0xa1f82e14bc09a1b42710df1a8a999b62f294e592");
         public static Address sdFXS = Address.Of("0x402f878bdd1f5c66fdaf0fababcf74741b68ac36");
         public static Address FXS = Address.Of("0x3432b6a60d23ca0dfca7761b7ab56459d9c964d0");
+        public static Address TXJP = Address.Of("0x961dd84059505d59f82ce4fb87d3c09bec65301d");
     }
 
     public static class Curve
@@ -102,5 +103,10 @@ public static class Addresses
         public static Address Token = Address.Of("0xda47862a83dac0c112ba89c6abc2159b95afd71c");
         public static Address Vault = Address.Of("0x06bDF212C290473dCACea9793890C5024c7Eb02c");
         public static Address Locker = Address.Of("0x3f78544364c3eCcDCe4d9C89a630AEa26122829d");
+    }
+
+    public static class UniV3Pools
+    {
+        public static Address TXJPWETH = Address.Of("0xa9166690c35d900a57d2ec132c58291bc0678944");
     }
 }
