@@ -5,6 +5,7 @@ using Llama.Airforce.Jobs.Factories;
 using Microsoft.Extensions.Configuration;
 using Nethereum.Web3;
 using NUnit.Framework;
+using static LanguageExt.Prelude;
 
 namespace Llama.Airforce.Jobs.Tests.FactoryTests;
 
@@ -36,7 +37,7 @@ public class FlyerFactoryTests
         };
 
         // Act
-        var flyer = FlyerFactory.CreateFlyerConvex(web3, http, pools, latestFinishedEpoch);
+        var flyer = FlyerFactory.CreateFlyerConvex(web3, http, pools, List(latestFinishedEpoch));
 
         // Assert
         Assert.IsTrue(await flyer.IsRight);
