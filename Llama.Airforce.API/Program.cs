@@ -12,6 +12,8 @@ builder.Services.AddCors(options =>
                     "http://localhost:8080",
                     "https://www.llama.airforce",
                     "https://next.llama.airforce",
+                    "https://ethers.llama.airforce",
+                    "https://viem.llama.airforce",
                     "https://llama.airforce",
                     "https://curvemonitor.com",
                     "https://fixedforex.live", // dev: https://twitter.com/zashtoneth
