@@ -46,32 +46,43 @@ logger.LogInformation("Cronjobs starting...");
 
 var graphApiKey = configuration["GRAPH_API_KEY"];
 
-// Update f(x) Protocol bribes.
-await Llama.Airforce.Jobs.Jobs.BribesV2.UpdateBribes(
-    logger,
-    bribesV2Context,
-    httpFactory.CreateClient,
-    web3ETH,
-    new BribesV2Factory.OptionsGetBribes(Protocol.ConvexFxn, true, graphApiKey),
-    None);
+// Check if there's an active Convex voting round, otherwise skip to save on API costs.
+var epochStart = await Llama.Airforce.Jobs.Contracts.Votium.GetCurrentEpoch(web3ETH);
+var epochEnd = epochStart.AddDays(5).AddHours(4);
+if (DateTime.UtcNow > epochEnd)
+{
+    logger.LogInformation($"Skipping cronjob, epoch ending date {epochEnd} exceeds current time {DateTime.UtcNow}");
+    return;
+}
+else
+{
+    // Update f(x) Protocol bribes.
+    await Llama.Airforce.Jobs.Jobs.BribesV2.UpdateBribes(
+        logger,
+        bribesV2Context,
+        httpFactory.CreateClient,
+        web3ETH,
+        new BribesV2Factory.OptionsGetBribes(Protocol.ConvexFxn, true, graphApiKey),
+        None);
 
-// Update Prisma bribes.
-await Llama.Airforce.Jobs.Jobs.BribesV2.UpdateBribes(
-    logger,
-    bribesV2Context,
-    httpFactory.CreateClient,
-    web3ETH,
-    new BribesV2Factory.OptionsGetBribes(Protocol.ConvexPrisma, true, graphApiKey),
-    None);
+    // Update Prisma bribes.
+    await Llama.Airforce.Jobs.Jobs.BribesV2.UpdateBribes(
+        logger,
+        bribesV2Context,
+        httpFactory.CreateClient,
+        web3ETH,
+        new BribesV2Factory.OptionsGetBribes(Protocol.ConvexPrisma, true, graphApiKey),
+        None);
 
-// Update Convex bribes.
-await Llama.Airforce.Jobs.Jobs.BribesV2.UpdateBribes(
-    logger,
-    bribesV2Context,
-    httpFactory.CreateClient,
-    web3ETH,
-    new BribesV2Factory.OptionsGetBribes(Protocol.ConvexCrv, true, graphApiKey),
-    None);
+    // Update Convex bribes.
+    await Llama.Airforce.Jobs.Jobs.BribesV2.UpdateBribes(
+        logger,
+        bribesV2Context,
+        httpFactory.CreateClient,
+        web3ETH,
+        new BribesV2Factory.OptionsGetBribes(Protocol.ConvexCrv, true, graphApiKey),
+        None);
+}
 
 // Get Votium data.
 var epochsVotiumV1 = await bribesContext
