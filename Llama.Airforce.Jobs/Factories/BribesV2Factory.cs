@@ -22,7 +22,8 @@ public static class BribesV2Factory
 {
     public record OptionsGetBribes(
         Protocol Protocol,
-        bool LastEpochOnly);
+        bool LastEpochOnly,
+        string GraphApiKey);
 
     public record BribesFunctions(
         Func<EitherAsync<Error, Map<string, (int, string)>>> GetProposalIds,
@@ -34,13 +35,14 @@ public static class BribesV2Factory
 
     public static BribesFunctions GetBribesFunctions(
         Protocol protocol,
-        Func<HttpClient> httpFactory) =>
+        Func<HttpClient> httpFactory,
+        string graphApiKey) =>
         protocol switch
         {
             Protocol.ConvexCrv => new(
                 Snapshots.Convex.GetProposalIdsV2.Par(httpFactory),
                 Snapshots.Snapshot.GetProposal.Par(httpFactory),
-                Subgraphs.Votium.GetEpochsV2.Par(httpFactory).Par(Protocol.ConvexCrv),
+                Subgraphs.Votium.GetEpochsV2.Par(httpFactory).Par(graphApiKey).Par(Protocol.ConvexCrv),
                 Snapshots.Snapshot.GetVotes.Par(httpFactory),
                 Snapshots.Convex.GetScores.Par(httpFactory),
                 CurveApi.GetGaugesGaugeToShortName.Par(httpFactory)),
@@ -48,7 +50,7 @@ public static class BribesV2Factory
             Protocol.ConvexPrisma => new(
                 Snapshots.Convex.GetProposalIdsPrisma.Par(httpFactory),
                 Snapshots.Snapshot.GetProposal.Par(httpFactory),
-                Subgraphs.Votium.GetEpochsV2.Par(httpFactory).Par(Protocol.ConvexPrisma),
+                Subgraphs.Votium.GetEpochsV2.Par(httpFactory).Par(graphApiKey).Par(Protocol.ConvexPrisma),
                 Snapshots.Snapshot.GetVotes.Par(httpFactory),
                 Snapshots.Convex.GetScores.Par(httpFactory),
                 PrismaApi.GetGauges.Par(httpFactory)),
@@ -56,7 +58,7 @@ public static class BribesV2Factory
             Protocol.ConvexFxn => new(
                 Snapshots.Convex.GetProposalIdsFxn.Par(httpFactory),
                 Snapshots.Snapshot.GetProposal.Par(httpFactory),
-                Subgraphs.Votium.GetEpochsV2.Par(httpFactory).Par(Protocol.ConvexFxn),
+                Subgraphs.Votium.GetEpochsV2.Par(httpFactory).Par(graphApiKey).Par(Protocol.ConvexFxn),
                 Snapshots.Snapshot.GetVotes.Par(httpFactory),
                 Snapshots.Convex.GetScores.Par(httpFactory),
                 FxnApi.GetGauges.Par(httpFactory)),
@@ -80,7 +82,8 @@ public static class BribesV2Factory
         {
             var bribeFunctions = GetBribesFunctions(
                 options.Protocol,
-                httpFactory);
+                httpFactory,
+                options.GraphApiKey);
 
             var proposalIds_ = bribeFunctions.GetProposalIds();
             var epochs_ = bribeFunctions.GetEpochs();

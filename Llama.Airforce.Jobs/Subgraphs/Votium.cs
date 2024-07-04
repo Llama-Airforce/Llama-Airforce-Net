@@ -11,10 +11,13 @@ namespace Llama.Airforce.Jobs.Subgraphs;
 
 public class Votium
 {
+    // Deprecated
     public const string SUBGRAPH_URL_VOTIUM = "https://api.thegraph.com/subgraphs/name/convex-community/votium-bribes";
-    public const string SUBGRAPH_URL_VOTIUM_V2 = "https://api.thegraph.com/subgraphs/name/convex-community/votium-v2";
-    public const string SUBGRAPH_URL_VOTIUM_PRISMA = "https://api.thegraph.com/subgraphs/name/convex-community/votium-prisma";
-    public const string SUBGRAPH_URL_VOTIUM_FXN = "https://api.thegraph.com/subgraphs/name/convex-community/fxn-subgraph";
+
+
+    public const string SUBGRAPH_URL_VOTIUM_V2 = "https://gateway-arbitrum.network.thegraph.com/api/{GRAPH_API_KEY}/subgraphs/id/89LUfZ4XJzUXrXgRFbVBpFtc92HiEuWGHULw8HJ6EgQN";
+    public const string SUBGRAPH_URL_VOTIUM_PRISMA = "https://gateway-arbitrum.network.thegraph.com/api/{GRAPH_API_KEY}/subgraphs/id/G1GsrZfV4UDGuCeHF2douYJuRUiZeh7vUvu6BuwhWtSz";
+    public const string SUBGRAPH_URL_VOTIUM_FXN = "https://gateway-arbitrum.network.thegraph.com/api/{GRAPH_API_KEY}/subgraphs/id/DUbmGMiU1wabsEzstg1QphikC8HMMwHs32VPaQ7hAjux";
 
     /// <summary>
     /// Returns Votium epoch & bribe history from The Graph
@@ -72,10 +75,12 @@ epoches(
     /// </summary>
     public static Func<
             Func<HttpClient>,
+            string,
             Dom.Protocol,
             EitherAsync<Error, Lst<Dom.EpochV2>>>
         GetEpochsV2 = fun((
             Func<HttpClient> httpFactory,
+            string graphApiKey,
             Dom.Protocol protocol) =>
         {
             const string Query = @"{
@@ -98,9 +103,9 @@ rounds(
 
             var url = protocol switch
             {
-                Dom.Protocol.ConvexCrv => SUBGRAPH_URL_VOTIUM_V2,
-                Dom.Protocol.ConvexPrisma => SUBGRAPH_URL_VOTIUM_PRISMA,
-                Dom.Protocol.ConvexFxn => SUBGRAPH_URL_VOTIUM_FXN,
+                Dom.Protocol.ConvexCrv => SUBGRAPH_URL_VOTIUM_V2.Replace("{GRAPH_API_KEY}", graphApiKey),
+                Dom.Protocol.ConvexPrisma => SUBGRAPH_URL_VOTIUM_PRISMA.Replace("{GRAPH_API_KEY}", graphApiKey),
+                Dom.Protocol.ConvexFxn => SUBGRAPH_URL_VOTIUM_FXN.Replace("{GRAPH_API_KEY}", graphApiKey),
                 _ => throw new ArgumentOutOfRangeException("Unsupported protocol")
             };
 
@@ -124,8 +129,9 @@ rounds(
     /// </summary>
     public static Func<
             Func<HttpClient>,
+            string,
             EitherAsync<Error, Lst<Dom.EpochV3>>>
-        GetEpochsV3 = fun((Func<HttpClient> httpFactory) =>
+        GetEpochsV3 = fun((Func<HttpClient> httpFactory, string graphApiKey) =>
         {
             const string Query = @"{
 rounds(
@@ -145,7 +151,7 @@ rounds(
   }
 } }";
 
-        return Subgraph.GetData(httpFactory, SUBGRAPH_URL_VOTIUM_V2, Query)
+        return Subgraph.GetData(httpFactory, SUBGRAPH_URL_VOTIUM_V2.Replace("{GRAPH_API_KEY}", graphApiKey), Query)
            .MapTry(JsonConvert.DeserializeObject<RequestEpochsVotiumV3>)
            .MapTry(data => toList(data
                .Data

@@ -58,7 +58,7 @@ public class BribeFactoryV2Tests
         });
 
         // Act
-        var bribeFunctions = BribesV2Factory.GetBribesFunctions(Protocol.ConvexCrv, http);
+        var bribeFunctions = BribesV2Factory.GetBribesFunctions(Protocol.ConvexCrv, http, "foo");
 
         var proposalIds = await bribeFunctions.GetProposalIds()
             .MatchAsync(x => x, _ => throw new Exception());

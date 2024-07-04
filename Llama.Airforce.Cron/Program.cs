@@ -44,13 +44,15 @@ var convexPoolContext = serviceProvider.GetService<PoolContext>();
 
 logger.LogInformation("Cronjobs starting...");
 
+var graphApiKey = configuration["GRAPH_API_KEY"];
+
 // Update f(x) Protocol bribes.
 await Llama.Airforce.Jobs.Jobs.BribesV2.UpdateBribes(
     logger,
     bribesV2Context,
     httpFactory.CreateClient,
     web3ETH,
-    new BribesV2Factory.OptionsGetBribes(Protocol.ConvexFxn, true),
+    new BribesV2Factory.OptionsGetBribes(Protocol.ConvexFxn, true, graphApiKey),
     None);
 
 // Update Prisma bribes.
@@ -59,7 +61,7 @@ await Llama.Airforce.Jobs.Jobs.BribesV2.UpdateBribes(
     bribesV2Context,
     httpFactory.CreateClient,
     web3ETH,
-    new BribesV2Factory.OptionsGetBribes(Protocol.ConvexPrisma, true),
+    new BribesV2Factory.OptionsGetBribes(Protocol.ConvexPrisma, true, graphApiKey),
     None);
 
 // Update Convex bribes.
@@ -68,7 +70,7 @@ await Llama.Airforce.Jobs.Jobs.BribesV2.UpdateBribes(
     bribesV2Context,
     httpFactory.CreateClient,
     web3ETH,
-    new BribesV2Factory.OptionsGetBribes(Protocol.ConvexCrv, true),
+    new BribesV2Factory.OptionsGetBribes(Protocol.ConvexCrv, true, graphApiKey),
     None);
 
 // Get Votium data.

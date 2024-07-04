@@ -22,16 +22,18 @@ public static class BribesV3Factory
         IWeb3 Web3ETH,
         IWeb3 Web3ZKEVM,
         Func<HttpClient> HttpFactory,
-        bool LastEpochOnly);
+        bool LastEpochOnly,
+        string GraphApiKey);
 
     public record BribesFunctions(
         Func<EitherAsync<Error, Lst<Dom.EpochV3>>> GetEpochs,
         Func<EitherAsync<Error, Map<Address, CurveApi.Gauge>>> GetGauges);
 
     public static BribesFunctions GetBribesFunctions(
-        Func<HttpClient> httpFactory) =>
+        Func<HttpClient> httpFactory,
+        string graphApiKey) =>
         new(
-            Subgraphs.Votium.GetEpochsV3.Par(httpFactory),
+            Subgraphs.Votium.GetEpochsV3.Par(httpFactory).Par(graphApiKey),
             CurveApi.GetGauges.Par(httpFactory));
 
     public static Func<
@@ -42,7 +44,7 @@ public static class BribesV3Factory
             OptionsGetBribes options,
             Func<long, Address, string, EitherAsync<Error, double>> getPrice) =>
         {
-            var bribeFunctions = GetBribesFunctions(options.HttpFactory);
+            var bribeFunctions = GetBribesFunctions(options.HttpFactory, options.GraphApiKey);
 
             var epochs_ = bribeFunctions.GetEpochs();
             var gauges_ = bribeFunctions.GetGauges();

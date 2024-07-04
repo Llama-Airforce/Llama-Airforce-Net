@@ -29,7 +29,7 @@ public class VotiumTests
         HttpClient http() => new();
 
         // Act
-        var data = await Votium.GetEpochsV2(http, Protocol.ConvexCrv)
+        var data = await Votium.GetEpochsV2(http, "foo", Protocol.ConvexCrv)
            .MatchAsync(x => x, _ => throw new System.Exception());
 
         // Assert

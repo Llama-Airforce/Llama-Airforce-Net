@@ -41,13 +41,14 @@ public class Bribes
         [TimerTrigger("0 */15 * * * *", RunOnStartup = false)] TimerInfo bribeTimer)
     {
         var lastEpochOnly = Config.GetValue<bool>("LastEpochOnly");
+        var graphApiKey = Config.GetValue<string>("GRAPH_API_KEY");
 
         await Jobs.Jobs.BribesV2.UpdateBribes(
             Logger,
             BribesV2Context,
             HttpClientFactory.CreateClient,
             Web3ETH,
-            new BribesV2Factory.OptionsGetBribes(Protocol.ConvexCrv, lastEpochOnly),
+            new BribesV2Factory.OptionsGetBribes(Protocol.ConvexCrv, lastEpochOnly, graphApiKey),
             None);
     }
 }
