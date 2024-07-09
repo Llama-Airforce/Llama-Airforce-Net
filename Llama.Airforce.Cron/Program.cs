@@ -45,11 +45,17 @@ var convexPoolContext = serviceProvider.GetService<PoolContext>();
 logger.LogInformation("Cronjobs starting...");
 
 var graphApiKey = configuration["GRAPH_API_KEY"];
+var liveEpochCheck = configuration.GetValue<bool>("LIVE_EPOCH_CHECK");
+if (!liveEpochCheck)
+{
+    logger.LogInformation("Skipping live epoch check");
+}
 
 // Check if there's an active Convex voting round, otherwise skip to save on API costs.
 var epochStart = await Llama.Airforce.Jobs.Contracts.Votium.GetCurrentEpoch(web3ETH);
 var epochEnd = epochStart.AddDays(5).AddHours(4);
-if (DateTime.UtcNow > epochEnd)
+
+if (DateTime.UtcNow > epochEnd && liveEpochCheck)
 {
     logger.LogInformation($"Skipping cronjob, epoch ending date {epochEnd} exceeds current time {DateTime.UtcNow}");
     return;
