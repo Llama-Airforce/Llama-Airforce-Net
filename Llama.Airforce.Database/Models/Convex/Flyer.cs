@@ -9,23 +9,39 @@ public class Flyer : Dashboard
     [JsonProperty("id")]
     public override string Id { get; set; } = ID;
 
-    // Revenue.
+    [JsonProperty("revenueMonthly")]
     public double RevenueMonthly { get; set; }
+
+    [JsonProperty("revenueAnnually")]
     public double RevenueAnnually { get; set; }
 
-    // General.
+    [JsonProperty("crvLockedDollars")]
     public double CrvLockedDollars { get; set; }
+
+    [JsonProperty("crvLockedDollarsMonthly")]
     public double CrvLockedDollarsMonthly { get; set; }
+
+    [JsonProperty("cvxTvl")]
     public double CvxTvl { get; set; }
+
+    [JsonProperty("cvxVotingPercentage")]
     public double CvxVotingPercentage { get; set; }
+
+    [JsonProperty("cvxMarketCap")]
     public double CvxMarketCap { get; set; }
+
+    [JsonProperty("cvxMarketCapFullyDiluted")]
     public double CvxMarketCapFullyDiluted { get; set; }
 
-    // Bribes.
+    [JsonProperty("bribesIncomeAnnually")]
     public double BribesIncomeAnnually { get; set; }
+
+    [JsonProperty("bribesIncomeBiWeekly")]
     public double BribesIncomeBiWeekly { get; set; }
 
-    // Farms.
+    [JsonProperty("cvxApr")]
     public double CvxApr { get; set; }
+
+    [JsonProperty("cvxCrvApr")]
     public double CvxCrvApr { get; set; }
 }

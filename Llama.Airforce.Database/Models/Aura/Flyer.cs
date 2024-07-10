@@ -9,9 +9,9 @@ public class Flyer : Dashboard
     [JsonProperty("id")]
     public override string Id { get; set; } = ID;
 
-    // General
+    [JsonProperty("auraBalPrice")]
     public double AuraBalPrice { get; set; }
 
-    // Farms.
+    [JsonProperty("auraBalApr")]
     public double AuraBalApr { get; set; }
 }
