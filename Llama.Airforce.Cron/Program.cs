@@ -58,7 +58,6 @@ var epochEnd = epochStart.AddDays(5).AddHours(4);
 if (DateTime.UtcNow > epochEnd && liveEpochCheck)
 {
     logger.LogInformation($"Skipping cronjob, epoch ending date {epochEnd} exceeds current time {DateTime.UtcNow}");
-    return;
 }
 else
 {
