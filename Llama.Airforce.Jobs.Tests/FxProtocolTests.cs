@@ -1,81 +1,74 @@
 using System;
-using System.Threading.Tasks;
-using Nethereum.Web3;
-using Nethereum.Hex.HexTypes;
 using System.Numerics;
+using System.Threading.Tasks;
+using Llama.Airforce.Jobs.Contracts;
+using Llama.Airforce.SeedWork.Types;
+using Microsoft.Extensions.Configuration;
+using Nethereum.Web3;
+using NUnit.Framework;
 
-class Program
+namespace Llama.Airforce.Jobs.Tests.ContractTests
 {
-    private static string contractAddress = "0x365AccFCa291e7D3914637ABf1F7635dB165Bb09"; //FXN TOKEN
-    private static string providerUrl = "";  //FILL PROVIDER URI
-
-    private static string abi = @"[
-        {
-            ""stateMutability"": ""view"",
-            ""type"": ""function"",
-            ""name"": ""mintable_in_timeframe"",
-            ""inputs"": [
-                { ""name"": ""start"", ""type"": ""uint256"" },
-                { ""name"": ""end"", ""type"": ""uint256"" }
-            ],
-            ""outputs"": [
-                { ""name"": """", ""type"": ""uint256"" }
-            ]
-        }
-    ]";
-
-    static async Task Main(string[] args)
+    public class FXProtocolTests
     {
-        var web3 = new Web3(providerUrl);
+        private readonly IConfiguration Configuration;
 
-        // Dates for fetching
-        string startDate = "2024-11-02";
-        string endDate = "2024-11-03";
-
-        try 
+        public FXProtocolTests()
         {
-            var tokensMinted = await GetMintedTokensInTimeframe(web3, startDate, endDate);
-            Console.WriteLine($"Tokens minted from {startDate} to {endDate}: {tokensMinted}");
+            var builder = new ConfigurationBuilder()
+                .AddUserSecrets<FXProtocolTests>()
+                .AddEnvironmentVariables();
+
+            Configuration = builder.Build();
         }
-        catch (Exception ex)
+
+
+        [Test]
+        public async Task GetMintedTokensInTimeframe()
         {
-            Console.WriteLine($"Error: {ex.Message}");
-        }
-    }
+            // Arrange
+            var alchemy = Configuration["ALCHEMY"];
+            var web3 = new Web3(alchemy);
 
-    public static async Task<BigInteger> GetMintedTokensInTimeframe(Web3 web3, string startDate, string endDate)
-    {
-        DateTime startDateTime = DateTime.Parse(startDate).ToUniversalTime();
-        DateTime endDateTime = DateTime.Parse(endDate).ToUniversalTime();
+            // Dates for fetching
+            string startDate = "2024-11-02";
+            string endDate = "2024-11-03";
 
-        // Convert to Unix timestamp
-        long startUnix = ((DateTimeOffset)startDateTime).ToUnixTimeSeconds();
-        long endUnix = ((DateTimeOffset)endDateTime).ToUnixTimeSeconds();
+            DateTime startDateTime = DateTime.Parse(startDate).ToUniversalTime();
+            DateTime endDateTime = DateTime.Parse(endDate).ToUniversalTime();
 
-        // Convert to BigInteger first
-        BigInteger startBigInt = new BigInteger(startUnix);
-        BigInteger endBigInt = new BigInteger(endUnix);
+            // Convert to Unix timestamp
+            long startUnix = ((DateTimeOffset)startDateTime).ToUnixTimeSeconds();
+            long endUnix = ((DateTimeOffset)endDateTime).ToUnixTimeSeconds();
 
-        Console.WriteLine($"Debug - Start timestamp: {startUnix}");
-        Console.WriteLine($"Debug - End timestamp: {endUnix}");
+            // Convert to BigInteger
+            BigInteger startBigInt = new BigInteger(startUnix);
+            BigInteger endBigInt = new BigInteger(endUnix);
 
-        var contract = web3.Eth.GetContract(abi, contractAddress);
-        var mintableInTimeframeFunction = contract.GetFunction("mintable_in_timeframe");
+            var contractAddress = "0x365AccFCa291e7D3914637ABf1F7635dB165Bb09"; // FXN TOKEN
+            var abi = @"[
+                {
+                    ""stateMutability"": ""view"",
+                    ""type"": ""function"",
+                    ""name"": ""mintable_in_timeframe"",
+                    ""inputs"": [
+                        { ""name"": ""start"", ""type"": ""uint256"" },
+                        { ""name"": ""end"", ""type"": ""uint256"" }
+                    ],
+                    ""outputs"": [
+                        { ""name"": """", ""type"": ""uint256"" }
+                    ]
+                }
+            ]";
 
-        try 
-        {
-            object[] parameters = new object[] 
-            { 
-                startBigInt,
-                endBigInt
-            };
+            var contract = web3.Eth.GetContract(abi, contractAddress);
+            var mintableInTimeframeFunction = contract.GetFunction("mintable_in_timeframe");
 
-            return await mintableInTimeframeFunction.CallAsync<BigInteger>(parameters);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Contract call error: {ex.Message}");
-            throw;
+            // Act
+            BigInteger tokensMinted = await mintableInTimeframeFunction.CallAsync<BigInteger>(startBigInt, endBigInt);
+
+            // Assert
+            Assert.IsTrue(tokensMinted >= 0, "Tokens minted should be non-negative");
         }
     }
 }
