@@ -64,7 +64,6 @@ class Program
 
         try 
         {
-            // Using object[] to pass parameters
             object[] parameters = new object[] 
             { 
                 startBigInt,
