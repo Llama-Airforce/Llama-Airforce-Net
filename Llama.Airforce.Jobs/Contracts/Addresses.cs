@@ -109,4 +109,9 @@ public static class Addresses
     {
         public static Address TXJPWETH = Address.Of("0xa9166690c35d900a57d2ec132c58291bc0678944");
     }
+
+    public static class Fxn
+    {
+        public static Address Token = Address.Of("0x365AccFCa291e7D3914637ABf1F7635dB165Bb09");
+    }
 }
