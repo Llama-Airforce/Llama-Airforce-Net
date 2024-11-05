@@ -29,19 +29,19 @@ public class FXProtocolTests
         var web3 = new Web3(alchemy);
 
         // Dates for fetching
-        string startDate = "2024-11-02";
-        string endDate = "2024-11-03";
+        var startDate = "2024-11-02";
+        var endDate = "2024-11-03";
 
-        DateTime startDateTime = DateTime.Parse(startDate).ToUniversalTime();
-        DateTime endDateTime = DateTime.Parse(endDate).ToUniversalTime();
+        var startDateTime = DateTime.Parse(startDate).ToUniversalTime();
+        var endDateTime = DateTime.Parse(endDate).ToUniversalTime();
 
         // Convert to Unix timestamp
-        long startUnix = ((DateTimeOffset)startDateTime).ToUnixTimeSeconds();
-        long endUnix = ((DateTimeOffset)endDateTime).ToUnixTimeSeconds();
+        var startUnix = ((DateTimeOffset)startDateTime).ToUnixTimeSeconds();
+        var endUnix = ((DateTimeOffset)endDateTime).ToUnixTimeSeconds();
 
         // Convert to BigInteger
-        BigInteger startBigInt = new BigInteger(startUnix);
-        BigInteger endBigInt = new BigInteger(endUnix);
+        var startBigInt = new BigInteger(startUnix);
+        var endBigInt = new BigInteger(endUnix);
 
         var contractAddress = "0x365AccFCa291e7D3914637ABf1F7635dB165Bb09"; // FXN TOKEN
         var abi = @"[
@@ -63,7 +63,7 @@ public class FXProtocolTests
         var mintableInTimeframeFunction = contract.GetFunction("mintable_in_timeframe");
 
         // Act
-        BigInteger tokensMinted = await mintableInTimeframeFunction.CallAsync<BigInteger>(startBigInt, endBigInt);
+        var tokensMinted = await mintableInTimeframeFunction.CallAsync<BigInteger>(startBigInt, endBigInt);
 
         // Assert
         Assert.IsTrue(tokensMinted >= 0, "Tokens minted should be non-negative");
