@@ -135,14 +135,13 @@ var epochsFxn = await bribesV2Context
         Protocol.ConvexFxn.ToProtocolString())
    .Map(toList);
 
-//var latestFinishedEpochFxn = epochsFxn
-//   .OrderBy(epoch => epoch.End)
-//   .Last(epoch => epoch.End <= DateTime.UtcNow.ToUnixTimeSeconds());
-// TODO
+var latestFinishedEpochFxn = epochsFxn
+   .OrderBy(epoch => epoch.End)
+   .Last(epoch => epoch.End <= DateTime.UtcNow.ToUnixTimeSeconds());
 
 var fxnData = new DashboardFactory.FxnData(
     epochsFxn,
-    new EpochV2());
+    latestFinishedEpochFxn);
 
 // Get Aura data.
 var epochsAura = await bribesContext

@@ -68,13 +68,13 @@ public static class DashboardFactory
                         data.PrismaData)
                    .Map(x => (Database.Dashboard)x);
 
-            //var overviewFxn_ =
-            //    CreateOverviewFxn(
-            //            logger,
-            //            web3,
-            //            httpFactory,
-            //            data.FxnData)
-            //       .Map(x => (Database.Dashboard)x);
+            var overviewFxn_ =
+                CreateOverviewFxn(
+                        logger,
+                        web3,
+                        httpFactory,
+                        data.FxnData)
+                   .Map(x => (Database.Dashboard)x);
 
             var overviewAura_ =
                 CreateOverviewAura(
@@ -87,9 +87,9 @@ public static class DashboardFactory
             return
                 from overviewVotium in overviewVotium_
                 from overviewPrisma in overviewPrisma_
-                /*from overviewFxn in overviewFxn_*/
+                from overviewFxn in overviewFxn_
                 from overviewAura in overviewAura_
-                select List(overviewVotium, overviewPrisma, /*overviewFxn,*/ overviewAura);
+                select List(overviewVotium, overviewPrisma, overviewFxn, overviewAura);
         });
 
     public static Func<
@@ -260,7 +260,6 @@ public static class DashboardFactory
                 };
         });
 
-        // TODO: copied from prisma, implement for fxn.
         public static Func<
             ILogger,
             IWeb3,
@@ -277,30 +276,31 @@ public static class DashboardFactory
             var totalBribed = data.LatestFinishedEpoch.Bribed.Sum(bribed => bribed.Value);
             var dollarPerVlCvx = totalBribes / totalBribed;
 
-            var prismaPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Prisma.Token, Network.Ethereum, Some(web3));
+            var fxnPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Fxn.Token, Network.Ethereum, Some(web3));
 
-            var prismaPerDay_ = 
-                from week in Prisma.GetWeek(web3).ToEitherAsync()
-                from emissions in Prisma.GetWeeklyEmissions(web3, week).ToEitherAsync()
-                select emissions.DivideByDecimals(18) / 7;
+            var end = DateTimeExt.FromUnixTimeSeconds(data.LatestFinishedEpoch.End);
+            var start = end.AddDays(-14);
+            var fxnPerDay_ = 
+                from emissions in Fxn.GetMintedTokensInTimeframe(web3, start, end).ToEitherAsync()
+                select emissions.DivideByDecimals(18) / 14;
 
-            var votingPower_ = Prisma.GetVotingPower(web3, Addresses.Convex.VoterProxyPrisma).ToEitherAsync();
+            var votingPower_ = Fxn.GetVotingPower(web3, Addresses.Convex.VoterProxyFxn).ToEitherAsync();
 
             var scoresTotal_ = data.LatestFinishedEpoch.ScoresTotal > 0
                 ? RightAsync<Error, double>(data.LatestFinishedEpoch.ScoresTotal)
                 : LeftAsync<Error, double>(Error.New("Total scores is zero"));
 
             // https://docs.google.com/spreadsheets/d/1SCO33fU-4EglqD9h191c5z3curC3SqJP-yshA1MjVqE/edit#gid=0
-            var prismaPerCvxPerRound_ =
-                from prismaPerDay in prismaPerDay_
+            var fxnPerCvxPerRound_ =
+                from fxnPerDay in fxnPerDay_
                 from votingPower in votingPower_
                 from scoresTotal in scoresTotal_
-                select prismaPerDay * 14 * votingPower / scoresTotal;
+                select fxnPerDay * 14 * votingPower / scoresTotal;
 
             var rewardPerDollarBribe_ =
-                from prismaPrice in prismaPrice_
-                from prismaPerCvxPerRound in prismaPerCvxPerRound_
-                select prismaPerCvxPerRound / dollarPerVlCvx * prismaPrice;
+                from fxnPrice in fxnPrice_
+                from fxnPerCvxPerRound in fxnPerCvxPerRound_
+                select fxnPerCvxPerRound / dollarPerVlCvx * fxnPrice;
 
             var epochOverviews = data
                .Epochs

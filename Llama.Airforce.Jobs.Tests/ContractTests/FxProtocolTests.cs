@@ -43,5 +43,18 @@ public class FXProtocolTests
         // Assert
         Assert.IsTrue(tokensMinted >= 0, "Tokens minted should be non-negative");
     }
+
+    [Test]
+    public async Task GetVotingPower()
+    {
+        // Arrange
+        var alchemy = Configuration["ALCHEMY"];
+        var web3 = new Web3(alchemy);
+
+        // Act
+        var votingPower = await Fxn.GetVotingPower(web3, Addresses.Convex.VoterProxyFxn);
+
+        // Assert
+    }
 }
 
