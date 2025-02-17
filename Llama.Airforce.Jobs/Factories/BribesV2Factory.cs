@@ -309,8 +309,13 @@ public static class BribesV2Factory
                    .FindIndex(gauge.StartsWith);
 
                 // Exception for first round of Prisma.
-                if (proposal.Id == "0x22f178f7eb3af9f69a55ade29bfe6d48f754de8e5723e16f778adee09da6f985"&&
-                    gauge.StartsWith("Prisma mkPRISMA-f"))
+                if (proposal.Id == "0x22f178f7eb3af9f69a55ade29bfe6d48f754de8e5723e16f778adee09da6f985"
+                    && gauge.StartsWith("Prisma mkPRISMA-f"))
+                    return -1;
+
+                // Frax bribed for a Votium choice that didn't exist in the Snapshot vote.
+                if (proposal.Id == "0x9f733e72a494805182cb6741baf1bd8c147becdac71d7db2f1f54c1ddc7cf621"
+                    && gauge.StartsWith("fraxtal-lend-crvUSD(S… (0x5071…)"))
                     return -1;
 
                 return index == -1
