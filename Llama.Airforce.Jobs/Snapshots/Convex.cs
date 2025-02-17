@@ -45,16 +45,6 @@ public class Convex
     public static Func<
             Func<HttpClient>,
             EitherAsync<Error, Map<string, (int Index, string Title)>>>
-        GetProposalIdsPrisma = fun((Func<HttpClient> httpFactory) => Snapshot.GetProposalIds
-           .Par(httpFactory)
-           .Par(SPACE_CVX)
-           .Par(Some("Prisma Emissions Weight for Week"))
-           .Par(_ => true)
-           .Par(proposal => proposal.Title)());
-
-    public static Func<
-            Func<HttpClient>,
-            EitherAsync<Error, Map<string, (int Index, string Title)>>>
         GetProposalIdsFxn = fun((Func<HttpClient> httpFactory) => Snapshot.GetProposalIds
            .Par(httpFactory)
            .Par(SPACE_CVX)

@@ -70,15 +70,6 @@ else
         new BribesV2Factory.OptionsGetBribes(Protocol.ConvexFxn, true, graphApiKey),
         None);
 
-    // Update Prisma bribes.
-    await Llama.Airforce.Jobs.Jobs.BribesV2.UpdateBribes(
-        logger,
-        bribesV2Context,
-        httpFactory.CreateClient,
-        web3ETH,
-        new BribesV2Factory.OptionsGetBribes(Protocol.ConvexPrisma, true, graphApiKey),
-        None);
-
     // Update Convex bribes.
     await Llama.Airforce.Jobs.Jobs.BribesV2.UpdateBribes(
         logger,
@@ -113,21 +104,6 @@ var votiumDataV2 = new DashboardFactory.VotiumDataV2(
     epochsVotiumV2,
     latestFinishedEpochVotium);
 
-// Get Prisma data.
-var epochsPrisma = await bribesV2Context
-   .GetAllAsync(
-        Platform.Votium.ToPlatformString(),
-        Protocol.ConvexPrisma.ToProtocolString())
-   .Map(toList);
-
-var latestFinishedEpochPrisma = epochsPrisma
-   .OrderBy(epoch => epoch.End)
-   .Last(epoch => epoch.End <= DateTime.UtcNow.ToUnixTimeSeconds());
-
-var prismaData = new DashboardFactory.PrismaData(
-    epochsPrisma,
-    latestFinishedEpochPrisma);
-
 // Get f(x) Protocol data.
 var epochsFxn = await bribesV2Context
    .GetAllAsync(
@@ -161,7 +137,6 @@ var auraData = new DashboardFactory.AuraData(
 var data = new DashboardFactory.Data(
     votiumDataV1,
     votiumDataV2,
-    prismaData,
     fxnData,
     auraData);
 
@@ -183,7 +158,7 @@ await Llama.Airforce.Jobs.Jobs.Flyers.UpdateFlyerConvex(
     web3ETH,
     httpFactory.CreateClient,
     poolsConvex,
-    List(latestFinishedEpochVotium, latestFinishedEpochPrisma));
+    List(latestFinishedEpochVotium));
 
 await Llama.Airforce.Jobs.Jobs.Flyers.UpdateFlyerAura(
     logger,

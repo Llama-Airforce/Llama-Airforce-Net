@@ -61,7 +61,7 @@ public static class Fxn
         // Get the total amount of voting power in the gauge controller.
         var totalWeight = await ERC20.GetTotalSupply(web3, Addresses.Fxn.Locker);
 
-        // Calculate the relative power of the owner compared to the total supply of vePRISMA.
+        // Calculate the relative power of the owner compared to the total supply of veFXN.
         return (double)(new BigDecimal(balanceOf) / new BigDecimal(totalWeight));
     });
 }

@@ -47,14 +47,6 @@ public static class BribesV2Factory
                 Snapshots.Convex.GetScores.Par(httpFactory),
                 CurveApi.GetGaugesGaugeToShortName.Par(httpFactory)),
 
-            Protocol.ConvexPrisma => new(
-                Snapshots.Convex.GetProposalIdsPrisma.Par(httpFactory),
-                Snapshots.Snapshot.GetProposal.Par(httpFactory),
-                Subgraphs.Votium.GetEpochsV2.Par(httpFactory).Par(graphApiKey).Par(Protocol.ConvexPrisma),
-                Snapshots.Snapshot.GetVotes.Par(httpFactory),
-                Snapshots.Convex.GetScores.Par(httpFactory),
-                PrismaApi.GetGauges.Par(httpFactory)),
-
             Protocol.ConvexFxn => new(
                 Snapshots.Convex.GetProposalIdsFxn.Par(httpFactory),
                 Snapshots.Snapshot.GetProposal.Par(httpFactory),
@@ -91,8 +83,6 @@ public static class BribesV2Factory
 
             // Votium V2 rounds start with 51 for Curve.
             var indexOffset = 51;
-            if (options is { Protocol: Protocol.ConvexPrisma })
-                indexOffset = 3; // Used to be 0, but votium contract was redeployed for round 4.
             if (options is { Protocol: Protocol.ConvexFxn })
                 indexOffset = 0;
 
@@ -193,7 +183,7 @@ public static class BribesV2Factory
                     .Map(par(ProcessBribe, logger, web3, proposal, options.Gauges, par(getPrice, proposal.End)))
                     // Transform the list of tasks to a task of a list.
                     .SequenceSerial()
-                    // Filter out the Prisma exception.
+                    // Filter out problematic bribes.
                     .Map(bs => bs
                        .Where(bribe => bribe.Choice != -1))
                     .Map(toList);

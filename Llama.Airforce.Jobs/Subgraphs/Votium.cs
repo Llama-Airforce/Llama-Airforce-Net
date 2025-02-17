@@ -16,7 +16,6 @@ public class Votium
 
 
     public const string SUBGRAPH_URL_VOTIUM_V2 = "https://gateway-arbitrum.network.thegraph.com/api/{GRAPH_API_KEY}/subgraphs/id/89LUfZ4XJzUXrXgRFbVBpFtc92HiEuWGHULw8HJ6EgQN";
-    public const string SUBGRAPH_URL_VOTIUM_PRISMA = "https://gateway-arbitrum.network.thegraph.com/api/{GRAPH_API_KEY}/subgraphs/id/G1GsrZfV4UDGuCeHF2douYJuRUiZeh7vUvu6BuwhWtSz";
     public const string SUBGRAPH_URL_VOTIUM_FXN = "https://gateway-arbitrum.network.thegraph.com/api/{GRAPH_API_KEY}/subgraphs/id/DUbmGMiU1wabsEzstg1QphikC8HMMwHs32VPaQ7hAjux";
 
     /// <summary>
@@ -60,8 +59,6 @@ epoches(
         var epochStart = protocol switch
         {
             Dom.Protocol.ConvexCrv => 1348 * 86400 * 14 + round * 86400 * 14,
-            // Prisma started at curve epoch 57.
-            Dom.Protocol.ConvexPrisma => 1348 * 86400 * 14 + (round + 57) * 86400 * 14,
             // f(x) Protocol started at curve epoch 65.
             Dom.Protocol.ConvexFxn => 1348 * 86400 * 14 + (round + 65) * 86400 * 14
         };
@@ -104,7 +101,6 @@ rounds(
             var url = protocol switch
             {
                 Dom.Protocol.ConvexCrv => SUBGRAPH_URL_VOTIUM_V2.Replace("{GRAPH_API_KEY}", graphApiKey),
-                Dom.Protocol.ConvexPrisma => SUBGRAPH_URL_VOTIUM_PRISMA.Replace("{GRAPH_API_KEY}", graphApiKey),
                 Dom.Protocol.ConvexFxn => SUBGRAPH_URL_VOTIUM_FXN.Replace("{GRAPH_API_KEY}", graphApiKey),
                 _ => throw new ArgumentOutOfRangeException("Unsupported protocol")
             };

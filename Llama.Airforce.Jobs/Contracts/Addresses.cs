@@ -42,7 +42,6 @@ public static class Addresses
         public static Address Staked = Address.Of("0xCF50b810E57Ac33B91dCF525C6ddd9881B139332");
 
         public static Address VoterProxyCurve = Address.Of("0x989AEb4d175e16225E39E87d0D97A3360524AD80");
-        public static Address VoterProxyPrisma = Address.Of("0x8ad7a9e2B3Cd9214f36Cb871336d8ab34DdFdD5b");
         public static Address VoterProxyFxn = Address.Of("0xd11a4Ee017cA0BECA8FA45fF2abFe9C6267b7881");
 
         public static Address L2GaugeVotingPlatform = Address.Of("0xfabccfc3e63ad25ed7613b2147ff4b9042d2ccaf");
@@ -97,13 +96,6 @@ public static class Addresses
         public static Address BBAUSDStaked = Address.Of("0xfd176ba656b91f0ce8c59ad5c3245bebb99cd69a");
 
         public static Address VoterProxy = Address.Of("0xaF52695E1bB01A16D33D7194C28C42b10e0Dbec2");
-    }
-
-    public static class Prisma
-    {
-        public static Address Token = Address.Of("0xda47862a83dac0c112ba89c6abc2159b95afd71c");
-        public static Address Vault = Address.Of("0x06bDF212C290473dCACea9793890C5024c7Eb02c");
-        public static Address Locker = Address.Of("0x3f78544364c3eCcDCe4d9C89a630AEa26122829d");
     }
 
     public static class UniV3Pools
