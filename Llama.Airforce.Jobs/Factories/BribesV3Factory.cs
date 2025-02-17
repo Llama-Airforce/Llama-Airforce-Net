@@ -224,7 +224,7 @@ public static class BribesV3Factory
                     Right: x => x,
                     Left: ex =>
                     {
-                        logger.LogError(ex.Message);
+                        logger.LogWarning(ex.Message);
                         return 0;
                     })
                 .ToEitherAsync();

@@ -298,19 +298,24 @@ public static class BribesV2Factory
                    .Choices
                    .FindIndex(gauge.StartsWith);
 
-                // Exception for first round of Prisma.
-                if (proposal.Id == "0x22f178f7eb3af9f69a55ade29bfe6d48f754de8e5723e16f778adee09da6f985"
-                    && gauge.StartsWith("Prisma mkPRISMA-f"))
-                    return -1;
+                if (index == -1)
+                    logger.LogWarning($"Choice index was not found for gauge '{gauge}'");
 
-                // Frax bribed for a Votium choice that didn't exist in the Snapshot vote.
-                if (proposal.Id == "0x9f733e72a494805182cb6741baf1bd8c147becdac71d7db2f1f54c1ddc7cf621"
-                    && gauge.StartsWith("fraxtal-lend-crvUSD(S… (0x5071…)"))
-                    return -1;
+                return EitherAsync<Error, int>.Right(index);
 
-                return index == -1
-                    ? EitherAsync<Error, int>.Left($"Choice index was not found for gauge '{gauge}'")
-                    : EitherAsync<Error, int>.Right(index);
+                /*
+                 * I no longer want to bubble up the error and fail early, because sometimes a smol $1k bribe
+                 * can cause an additional $150k or more in bribes to go unaccounted for. Yes, it works in that people
+                 * will notify me sooner, but it also prevents important users from accessing up-to-date data they require,
+                 * data that has nothing to do with the problematic bribe. Instead, keep an eye on the logs, and the code
+                 * will continue to function properly for the non-problematic cases. Therefore, return -1 and filter these out
+                 * later with .Where(bribe => bribe.Choice != -1)). If I'm unable to fix issues in time before the round ends,
+                 * at least some major, important bribes will still be recorded.
+                 *
+                 * return index == -1
+                 *   ? EitherAsync<Error, int>.Left($"Choice index was not found for gauge '{gauge}'")
+                 *   : EitherAsync<Error, int>.Right(index);
+                 */
             });
 
             // Convert any price error to $0, but log it. Then convert to EitherAsync for the applicative below.
@@ -319,7 +324,7 @@ public static class BribesV2Factory
                     Right: x => x,
                     Left: ex =>
                     {
-                        logger.LogError(ex.Message);
+                        logger.LogWarning(ex.Message);
                         return 0;
                     })
                 .ToEitherAsync();
