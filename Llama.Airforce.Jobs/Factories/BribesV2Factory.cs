@@ -289,7 +289,12 @@ public static class BribesV2Factory
             var maxPerVote_ = decimals_.Map(decimals => BigInteger.Parse(bribe.MaxPerVote).DivideByDecimals(decimals));
             var gauge_ = gauges
                .Find(bribe.Gauge)
-               .ToEither(Error.New($"Could not find pool name for gauge '{bribe.Gauge}'"))
+               .Match(
+                    Some: x => Either<Error, string>.Right(x),
+                    None: () => {
+                        logger.LogWarning($"Could not find pool name for gauge '{bribe.Gauge}'");
+                        return "0x0";
+                    })
                .ToAsync();
 
             var choice_ = gauge_.Bind(gauge =>
