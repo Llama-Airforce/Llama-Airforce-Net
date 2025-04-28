@@ -168,10 +168,13 @@ public static class BribesV2Factory
             var epochMonth = epochDate.ToString("MMM", CultureInfo.InvariantCulture);
             var titleRegex = $"{epochDate.Day}(st|nd|rd|th) {epochMonth} {epochDate.Year}";
 
-            var proposalId_ = options.ProposalIds
-                .Find(x => Regex.IsMatch(x.Value.Title, titleRegex))
-                .Map(x => x.Key)
-                .ToEitherAsync(Error.New($"Failed to find id for proposal {titleRegex}"));
+            // 24 Apr 2025 Gauge vote has been removed and remade.
+            var proposalId_ = (options.Protocol == Protocol.ConvexCrv && epoch.Round == 95)
+                ? "0x3016b4856269e94064a8ddd5bd6d229a03f08471c011b6fa4ddbccd225b4e6aa"
+                : options.ProposalIds
+                    .Find(x => Regex.IsMatch(x.Value.Title, titleRegex))
+                    .Map(x => x.Key)
+                    .ToEitherAsync(Error.New($"Failed to find id for proposal {titleRegex}"));
 
             var proposal_ = proposalId_.Bind(options.BribesFunctions.GetProposal);
 
