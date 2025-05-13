@@ -29,7 +29,7 @@ public static class CurveApi
         Address Address,
         string ShortName);
 
-    public const string CURVE_API_URL = "https://api.curve.fi/api/getAllGauges";
+    public const string CURVE_API_URL = "https://api.curve.finance/api/getAllGauges";
 
     public static Func<
             Func<HttpClient>,
