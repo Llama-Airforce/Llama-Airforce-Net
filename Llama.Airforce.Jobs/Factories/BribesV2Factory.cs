@@ -168,13 +168,17 @@ public static class BribesV2Factory
             var epochMonth = epochDate.ToString("MMM", CultureInfo.InvariantCulture);
             var titleRegex = $"{epochDate.Day}(st|nd|rd|th) {epochMonth} {epochDate.Year}";
 
-            // 24 Apr 2025 Gauge vote has been removed and remade.
-            var proposalId_ = (options.Protocol == Protocol.ConvexCrv && epoch.Round == 95)
-                ? "0x3016b4856269e94064a8ddd5bd6d229a03f08471c011b6fa4ddbccd225b4e6aa"
-                : options.ProposalIds
+            // There's been a few cases where gauge votes had to be remade on Snapshot, like on 24 Apr 2025.
+            var proposalId_ = options.Protocol switch
+            {
+                Protocol.ConvexCrv when epoch.Round == 95 => "0x3016b4856269e94064a8ddd5bd6d229a03f08471c011b6fa4ddbccd225b4e6aa",
+                Protocol.ConvexCrv when epoch.Round == 110 => "0xfbe6ad735eb701164282c739dbbfb409587532a050a69b9f1f97c8d0ca93b8b7",
+                Protocol.ConvexFxn when epoch.Round == 110 => "0x33f4e770e566dc8c5e47d9b3b0385ec0816fa9f999f9751d915c171a3176b265",
+                _ => options.ProposalIds
                     .Find(x => Regex.IsMatch(x.Value.Title, titleRegex))
                     .Map(x => x.Key)
-                    .ToEitherAsync(Error.New($"Failed to find id for proposal {titleRegex}"));
+                    .ToEitherAsync(Error.New($"Failed to find id for proposal {titleRegex}"))
+            };
 
             var proposal_ = proposalId_.Bind(options.BribesFunctions.GetProposal);
 
