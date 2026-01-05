@@ -36,6 +36,7 @@ public static class PriceFunctions
         {
             "USDM" => SomeAsync(1.0),
             "BB-A-USD" => SomeAsync(1.0),
+            "pmUSD" => SomeAsync(1.0),
             "T" => web3.Match(
                 w => GetCurveV2Price(httpFactory, w, Addresses.ERC20.T, None).ToOption(),
                 () => None),
