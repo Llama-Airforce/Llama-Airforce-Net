@@ -61,4 +61,31 @@ public static class DefiLlama
                 .MapTry(JsonConvert.DeserializeObject<RequestPrice>)
                 .MapTry(x => x.Coins[coin].Price);
         });
+
+    public class RequestProtocol
+    {
+        [JsonProperty("mcap")]
+        public double MarketCap { get; set; }
+    }
+
+    public const string DEFILLAMA_PROTOCOL_URL = "https://api.llama.fi/protocol";
+
+    public static Func<
+        Func<HttpClient>,
+        string,
+        EitherAsync<Error, double>>
+    GetMarketCap = fun((
+        Func<HttpClient> httpFactory,
+        string protocol) =>
+    {
+        var url = $"{DEFILLAMA_PROTOCOL_URL}/{protocol}";
+
+        return Functions
+            .HttpFunctions
+            .GetData(
+                httpFactory,
+                url)
+            .MapTry(JsonConvert.DeserializeObject<RequestProtocol>)
+            .MapTry(x => x.MarketCap);
+    });
 }

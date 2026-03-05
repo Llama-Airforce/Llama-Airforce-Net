@@ -27,12 +27,7 @@ public static class FlyerFactory
             Lst<Db.Bribes.EpochV2> latestFinishedEpochs) =>
         {
             // Coingecko data.
-            var caps_ = CoinGecko.GetData(
-                    httpFactory,
-                    Addresses.Convex.Token,
-                    Network.Ethereum)
-                .Bind(x => CoinGecko.GetMarketCap(x).ToAsync());
-
+            var marketCap_ = DefiLlama.GetMarketCap(httpFactory, "convex-finance");
             var cvxPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Convex.Token, Network.Ethereum, Some(web3));
             var crvPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Curve.Token, Network.Ethereum, Some(web3));
 
@@ -81,7 +76,7 @@ public static class FlyerFactory
                 .ToEitherAsync();
 
             return
-                from caps in caps_
+                from marketCap in marketCap_
                 from tvl in tvl_
                 from cvxApr in cvxApr_
                 from cvxCrvApr in cvxCrvApr_
@@ -96,8 +91,8 @@ public static class FlyerFactory
                     CrvLockedDollarsMonthly = crvLockedDollars / ((DateTime.Now - Convex.Genesis).Days / (365.25 / 12)),
                     CvxTvl = tvl,
                     CvxVotingPercentage = cvxVotingPercentage,
-                    CvxMarketCap = caps.MCap,
-                    CvxMarketCapFullyDiluted = caps.FDV,
+                    CvxMarketCap = marketCap,
+                    CvxMarketCapFullyDiluted = 0,
 
                     BribesIncomeAnnually = bribeIncomeBiWeeklyTotal * BiWeeksPerYear,
                     BribesIncomeBiWeekly = bribeIncomeBiWeeklyTotal,
