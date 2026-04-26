@@ -63,19 +63,10 @@ public static class DashboardFactory
                         data.FxnData)
                    .Map(x => (Database.Dashboard)x);
 
-            var overviewAura_ =
-                CreateOverviewAura(
-                    logger,
-                    web3,
-                    httpFactory,
-                    data.AuraData)
-                .Map(x => (Database.Dashboard)x);
-
             return
                 from overviewVotium in overviewVotium_
                 from overviewFxn in overviewFxn_
-                from overviewAura in overviewAura_
-                select List(overviewVotium, overviewFxn, overviewAura);
+                select List(overviewVotium, overviewFxn);
         });
 
     public static Func<
