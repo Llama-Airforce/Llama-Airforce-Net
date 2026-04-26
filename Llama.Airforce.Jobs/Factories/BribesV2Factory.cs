@@ -173,7 +173,9 @@ public static class BribesV2Factory
             {
                 Protocol.ConvexCrv when epoch.Round == 95 => "0x3016b4856269e94064a8ddd5bd6d229a03f08471c011b6fa4ddbccd225b4e6aa",
                 Protocol.ConvexCrv when epoch.Round == 110 => "0x40a7f783fb51632162a16ae65a10f142547e25eb660f37060ca242f4c68df7cd",
+                Protocol.ConvexCrv when epoch.Round == 121 => "0xda3349d575981a16774bc9308ba4202938e2c839899ff53a94725121e285aece",
                 Protocol.ConvexFxn when epoch.Round == 110 => "0x33f4e770e566dc8c5e47d9b3b0385ec0816fa9f999f9751d915c171a3176b265",
+                Protocol.ConvexFxn when epoch.Round == 56 => "0x138df822ddbf89129e229e52d99ce73fc2527a952c80502628552a258dd7c91c",
                 _ => options.ProposalIds
                     .Find(x => Regex.IsMatch(x.Value.Title, titleRegex))
                     .Map(x => x.Key)
