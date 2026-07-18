@@ -19,6 +19,9 @@ public class EpochOverview
     [JsonProperty("proposal")]
     public string Proposal { get; set; }
 
+    [JsonProperty("voteSource")]
+    public string VoteSource { get; set; } = "snapshot";
+
     [JsonProperty("end")]
     public long End { get; set; }
 

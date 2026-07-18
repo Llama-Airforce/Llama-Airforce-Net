@@ -45,6 +45,15 @@ public static class Addresses
         public static Address VoterProxyFxn = Address.Of("0xd11a4Ee017cA0BECA8FA45fF2abFe9C6267b7881");
 
         public static Address L2GaugeVotingPlatform = Address.Of("0xfabccfc3e63ad25ed7613b2147ff4b9042d2ccaf");
+
+        public static Address Core = Address.Of("0xCC07e8BA6bc8aeb18C4AE110C3Da9c7Dce4A3e74");
+        public static Address VotingRegistry = Address.Of("0x6C3a56ea7c2DA4ee2876DbDa437173B28f001c34");
+        public static Address GaugeDelegation = Address.Of("0xb8270eef1319173dE9f5033FED442F638ff1607d");
+        public static Address GaugeVoteHelper = Address.Of("0x76C484F67898EA978aa874dc7B32e648380FB9b1");
+        public static Address CurveGaugeVoting = Address.Of("0x21F304a9DF75E087A035B4c5792bD4e6BB7AF8aF");
+        public static Address CurveGaugeRegistry = Address.Of("0x96b24E0534B0cA31D8523D4be4904747Fd579D95");
+        public static Address FxGaugeVoting = Address.Of("0xC3701a7696Cd41a4E3e107B8A7b897A3aFB4c50a");
+        public static Address FxGaugeRegistry = Address.Of("0xC2F99261d84D1665Df7e50F46813497A737AfB20");
     }
 
     public static class CvxCrv

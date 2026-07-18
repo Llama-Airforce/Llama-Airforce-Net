@@ -23,7 +23,33 @@ public static class BribesV2Factory
     public record OptionsGetBribes(
         Protocol Protocol,
         bool LastEpochOnly,
-        string GraphApiKey);
+        string GraphApiKey,
+        OnchainVotingOptions? OnchainVoting = null);
+
+    public record OnchainVotingOptions(
+        int CutoverRound,
+        int FirstProposalId = 0)
+    {
+        public bool IsEnabledForRound(int round) =>
+            CutoverRound > 0 && round >= CutoverRound;
+
+        public int ToProposalId(int round) =>
+            round - CutoverRound + FirstProposalId;
+
+        public static OnchainVotingOptions? FromStrings(
+            string? cutoverRound,
+            string? firstProposalId)
+        {
+            if (!int.TryParse(cutoverRound, out var cutover) || cutover <= 0)
+                return null;
+
+            var firstProposal = int.TryParse(firstProposalId, out var proposal)
+                ? proposal
+                : 0;
+
+            return new OnchainVotingOptions(cutover, firstProposal);
+        }
+    }
 
     public record BribesFunctions(
         Func<EitherAsync<Error, Map<string, (int, string)>>> GetProposalIds,
@@ -77,7 +103,6 @@ public static class BribesV2Factory
                 httpFactory,
                 options.GraphApiKey);
 
-            var proposalIds_ = bribeFunctions.GetProposalIds();
             var epochs_ = bribeFunctions.GetEpochs();
             var gauges_ = bribeFunctions.GetGauges();
 
@@ -86,54 +111,71 @@ public static class BribesV2Factory
             if (options is { Protocol: Protocol.ConvexFxn })
                 indexOffset = 0;
 
-            EitherAsync<Error, EitherAsync<Error, Lst<Db.Bribes.EpochV2>>> dbEpochs;
-            if (options.LastEpochOnly)
-            {
-                dbEpochs =
-                    from proposalIds in proposalIds_
-                    from epochs in epochs_
-                    from gauges in gauges_
-                    select epochs
-                        .Reverse()
-                        .Take(1)
-                        .Map(epoch => ProcessEpoch(
-                            logger,
-                            web3,
-                            new OptionsProcessEpoch(
-                                bribeFunctions,
-                                options.Protocol,
-                                proposalIds,
-                                epoch,
-                                gauges,
-                            epochs.Count - 1 + indexOffset),
-                            getPrice))
-                        .SequenceSerial()
-                        .Map(toList);
-            }
-            else
-            {
-                dbEpochs =
-                    from proposalIds in proposalIds_
-                    from epochs in epochs_
-                    from gauges in gauges_
-                    select epochs
-                        .Map((i, epoch) => ProcessEpoch(
-                            logger,
-                            web3,
-                            new OptionsProcessEpoch(
-                                bribeFunctions,
-                                options.Protocol,
-                                proposalIds,
-                                epoch,
-                                gauges,
-                                i + indexOffset),
-                            getPrice))
-                        .SequenceSerial()
-                        .Map(toList);
-            }
+            EitherAsync<Error, EitherAsync<Error, Lst<Db.Bribes.EpochV2>>> dbEpochs =
+                from epochs in epochs_
+                from gauges in gauges_
+                select ProcessEpochs(
+                    logger,
+                    web3,
+                    bribeFunctions,
+                    options,
+                    epochs,
+                    gauges,
+                    indexOffset,
+                    getPrice);
 
             return dbEpochs.Bind(x => x);
         });
+
+    private record EpochToProcess(
+        Dom.EpochV2 Epoch,
+        int Index)
+    {
+        public int PublicRound => Index + 1;
+    }
+
+    private static EitherAsync<Error, Lst<Db.Bribes.EpochV2>> ProcessEpochs(
+        ILogger logger,
+        IWeb3 web3,
+        BribesFunctions bribeFunctions,
+        OptionsGetBribes options,
+        Lst<Dom.EpochV2> epochs,
+        Map<string, string> gauges,
+        int indexOffset,
+        Func<long, Address, string, EitherAsync<Error, double>> getPrice)
+    {
+        var epochsToProcess = options.LastEpochOnly
+            ? toList(epochs
+               .Reverse()
+               .Take(1)
+               .Select(epoch => new EpochToProcess(epoch, epochs.Count - 1 + indexOffset)))
+            : toList(epochs
+               .Select((epoch, i) => new EpochToProcess(epoch, i + indexOffset)));
+
+        var needsSnapshotProposalIds = epochsToProcess
+           .Any(epoch => !IsOnchainRound(options.Protocol, epoch.PublicRound, options.OnchainVoting));
+
+        var proposalIds_ = needsSnapshotProposalIds
+            ? bribeFunctions.GetProposalIds()
+            : RightAsync<Error, Map<string, (int Index, string Title)>>(Map<string, (int Index, string Title)>());
+
+        return proposalIds_
+           .Bind(proposalIds => epochsToProcess
+               .Map(epoch => ProcessEpoch(
+                    logger,
+                    web3,
+                    new OptionsProcessEpoch(
+                        bribeFunctions,
+                        options.Protocol,
+                        proposalIds,
+                        epoch.Epoch,
+                        gauges,
+                        epoch.Index,
+                        options.OnchainVoting),
+                    getPrice))
+               .SequenceSerial()
+               .Map(toList));
+    }
 
     public record OptionsProcessEpoch(
         BribesFunctions BribesFunctions,
@@ -141,7 +183,11 @@ public static class BribesV2Factory
         Map<string, (int Index, string Title)> ProposalIds,
         Dom.EpochV2 Epoch,
         Map<string, string> Gauges,
-        int Index);
+        int Index,
+        OnchainVotingOptions? OnchainVoting = null)
+    {
+        public int PublicRound => Index + 1;
+    }
 
     public static Func<
             ILogger,
@@ -155,15 +201,19 @@ public static class BribesV2Factory
             OptionsProcessEpoch options,
             Func<long, Address, string, EitherAsync<Error, double>> getPrice) =>
         {
+            var publicRound = options.PublicRound;
             var epochId = EpochId.Create(
                 StringMax.Of(Platform.Votium.ToPlatformString()),
                 StringMax.Of(options.Protocol.ToProtocolString()),
-                options.Index + 1);
+                publicRound);
 
             logger.LogInformation($"Updating bribes: {epochId}");
 
             // Find proposal id by regex matching all proposal titles with the correct date.
             var epoch = options.Epoch;
+            if (IsOnchainRound(options.Protocol, publicRound, options.OnchainVoting))
+                return ProcessOnchainEpoch(logger, web3, options, getPrice);
+
             var epochDate = Subgraphs.Votium.GetEpochDate(options.Protocol, epoch.Round);
             var epochMonth = epochDate.ToString("MMM", CultureInfo.InvariantCulture);
             var titleRegex = $"{epochDate.Day}(st|nd|rd|th) {epochMonth} {epochDate.Year}";
@@ -189,7 +239,13 @@ public static class BribesV2Factory
                 var bribes = epoch.Bribes.ToList();
                 return bribes
                     // Process each bribe.
-                    .Map(par(ProcessBribe, logger, web3, proposal, options.Gauges, par(getPrice, proposal.End)))
+                    .Map(par(
+                        ProcessBribe,
+                        logger,
+                        web3,
+                        new ProcessBribeOptions(proposal.Choices),
+                        options.Gauges,
+                        par(getPrice, proposal.End)))
                     // Transform the list of tasks to a task of a list.
                     .SequenceSerial()
                     // Filter out problematic bribes.
@@ -265,19 +321,178 @@ public static class BribesV2Factory
                    {
                        Platform = Platform.Votium.ToPlatformString(),
                        Protocol = options.Protocol.ToProtocolString(),
-                       Round = options.Index + 1,
+                       Round = publicRound,
+                       SourceRound = epoch.Round,
                        End = proposal.End,
                        Proposal = proposal.Id,
+                       VoteSource = "snapshot",
                        Bribed = votesPools.ToDictionary(),
                        Bribes = bribes.ToList(),
                        ScoresTotal = proposal.ScoresTotal
                    };
         });
 
+    private static bool IsOnchainRound(
+        Protocol protocol,
+        int round,
+        OnchainVotingOptions? onchainVoting) =>
+        protocol is Protocol.ConvexCrv or Protocol.ConvexFxn
+        && onchainVoting is not null
+        && onchainVoting.IsEnabledForRound(round);
+
+    private static Either<Error, Address> GetOnchainGaugeVotingPlatform(Protocol protocol) =>
+        protocol switch
+        {
+            Protocol.ConvexCrv => Either<Error, Address>.Right(Addresses.Convex.CurveGaugeVoting),
+            Protocol.ConvexFxn => Either<Error, Address>.Right(Addresses.Convex.FxGaugeVoting),
+            _ => Either<Error, Address>.Left(Error.New($"Unsupported on-chain voting protocol: {protocol}"))
+        };
+
+    private static EitherAsync<Error, Db.Bribes.EpochV2> ProcessOnchainEpoch(
+        ILogger logger,
+        IWeb3 web3,
+        OptionsProcessEpoch options,
+        Func<long, Address, string, EitherAsync<Error, double>> getPrice)
+    {
+        if (options.OnchainVoting is null)
+            return LeftAsync<Error, Db.Bribes.EpochV2>(Error.New("On-chain voting options not set"));
+
+        var platform_ = GetOnchainGaugeVotingPlatform(options.Protocol).ToAsync();
+        var publicRound = options.PublicRound;
+        var votiumRound = options.Epoch.Round;
+        var proposalId = options.OnchainVoting.ToProposalId(publicRound);
+        var proposal_ =
+            from platform in platform_
+            from proposal in Contracts.ConvexOnchainGaugeVoting
+               .GetProposal(web3, platform, proposalId)
+               .ToEitherAsync()
+            from expectedEpoch in GetExpectedOnchainVotingEpoch(web3, options.Protocol, votiumRound)
+            from validatedProposal in ValidateOnchainProposal(
+                options.Protocol,
+                publicRound,
+                votiumRound,
+                proposalId,
+                proposal,
+                expectedEpoch)
+            select validatedProposal;
+
+        var proposalEnd_ = proposal_.Map(proposal => (long)proposal.EndTime);
+
+        var bribes_ = proposalEnd_.Bind(proposalEnd =>
+        {
+            var bribes = options.Epoch.Bribes.ToList();
+            return bribes
+               .Map(par(
+                    ProcessBribe,
+                    logger,
+                    web3,
+                    new ProcessBribeOptions(),
+                    options.Gauges,
+                    par(getPrice, proposalEnd)))
+               .SequenceSerial()
+               .Map(bs => bs
+                  .Where(bribe => bribe.Choice != -1))
+               .Map(toList);
+        });
+
+        var bribed_ = platform_.Bind(platform => bribes_
+           .Bind(bribes => bribes
+               .DistinctBy(bribe => bribe.Gauge)
+               .Map(async bribe =>
+                {
+                    var score = await Contracts.ConvexOnchainGaugeVoting
+                       .GaugeTotal(web3, platform, proposalId, bribe.Gauge)
+                       .Map(x => x.DivideByDecimals(18));
+
+                    return new
+                    {
+                        bribe.Pool,
+                        Score = score
+                    };
+                })
+               .SequenceSerial()
+               .Map(toList)
+               .Map(gauges => gauges
+                   .Where(gauge => gauge.Score > 0)
+                   .Aggregate(
+                        Map<string, double>(),
+                        (acc, gauge) => acc.AddOrUpdate(gauge.Pool, x => x + gauge.Score, gauge.Score)))
+               .ToEitherAsync()));
+
+        var scoresTotal_ =
+            from platform in platform_
+            from total in Contracts.ConvexOnchainGaugeVoting
+               .VoteTotal(web3, platform, proposalId)
+               .Map(x => x.DivideByDecimals(18))
+               .ToEitherAsync()
+            select total;
+
+        return
+            from proposalEnd in proposalEnd_
+            from bribes in bribes_
+            from bribed in bribed_
+            from scoresTotal in scoresTotal_
+            select new Db.Bribes.EpochV2
+            {
+                Platform = Platform.Votium.ToPlatformString(),
+                Protocol = options.Protocol.ToProtocolString(),
+                Round = publicRound,
+                SourceRound = votiumRound,
+                End = proposalEnd,
+                Proposal = proposalId.ToString(),
+                VoteSource = "convex-onchain",
+                Bribed = bribed.ToDictionary(),
+                Bribes = bribes.ToList(),
+                ScoresTotal = scoresTotal
+            };
+    }
+
+    private static EitherAsync<Error, BigInteger> GetExpectedOnchainVotingEpoch(
+        IWeb3 web3,
+        Protocol protocol,
+        int round)
+    {
+        var expectedRoundDate = Subgraphs.Votium
+           .GetEpochDate(protocol, round)
+           .ToUnixTimeSeconds();
+
+        return Contracts.Convex
+           .FindEpochId(web3, expectedRoundDate)
+           .ToEitherAsync();
+    }
+
+    private static EitherAsync<Error, Contracts.ConvexOnchainGaugeVoting.ProposalOutput> ValidateOnchainProposal(
+        Protocol protocol,
+        int publicRound,
+        int votiumRound,
+        int proposalId,
+        Contracts.ConvexOnchainGaugeVoting.ProposalOutput proposal,
+        BigInteger expectedEpoch)
+    {
+        var roundLabel = publicRound == votiumRound
+            ? $"round {publicRound}"
+            : $"round {publicRound} (Votium round {votiumRound})";
+
+        if (proposal.EndTime == 0)
+            return LeftAsync<Error, Contracts.ConvexOnchainGaugeVoting.ProposalOutput>(
+                Error.New(
+                    $"On-chain voting proposal {proposalId} for {protocol} {roundLabel} is empty or force-ended"));
+
+        var previousExpectedEpoch = expectedEpoch - BigInteger.One;
+        if (proposal.Epoch != expectedEpoch && proposal.Epoch != previousExpectedEpoch)
+            return LeftAsync<Error, Contracts.ConvexOnchainGaugeVoting.ProposalOutput>(
+                Error.New(
+                    $"On-chain voting proposal {proposalId} for {protocol} {roundLabel} has vlCVX epoch {proposal.Epoch}, expected {expectedEpoch} or {previousExpectedEpoch}"));
+
+        return RightAsync<Error, Contracts.ConvexOnchainGaugeVoting.ProposalOutput>(proposal);
+    }
+
+    public record ProcessBribeOptions(List<string>? SnapshotChoices = null);
+
     public static Func<
             ILogger,
             IWeb3,
-            Snap.Proposal,
+            ProcessBribeOptions,
             Map<string, string>,
             Func<Address, string, EitherAsync<Error, double>>,
             Dom.BribeV2,
@@ -285,7 +500,7 @@ public static class BribesV2Factory
         ProcessBribe = fun((
             ILogger logger,
             IWeb3 web3,
-            Snap.Proposal proposal,
+            ProcessBribeOptions options,
             Map<string, string> gauges,
             Func<Address, string, EitherAsync<Error, double>> getPrice,
             Dom.BribeV2 bribe) =>
@@ -302,15 +517,18 @@ public static class BribesV2Factory
                     Some: x => Either<Error, string>.Right(x),
                     None: () => {
                         logger.LogWarning($"Could not find pool name for gauge '{bribe.Gauge}'");
-                        return "0x0";
+                        return Either<Error, string>.Right("");
                     })
                .ToAsync();
 
             var choice_ = gauge_.Bind(gauge =>
             {
-                var index = proposal
-                   .Choices
-                   .FindIndex(gauge.StartsWith);
+                if (string.IsNullOrWhiteSpace(gauge))
+                    return EitherAsync<Error, int>.Right(-1);
+
+                var index = options.SnapshotChoices is null
+                    ? 0
+                    : options.SnapshotChoices.FindIndex(gauge.StartsWith);
 
                 if (index == -1)
                     logger.LogWarning($"Choice index was not found for gauge '{gauge}'");

@@ -53,8 +53,8 @@ public class Dashboards
            .Map(toList);
 
         var latestFinishedEpochVotium = epochsVotiumV2
-            .OrderBy(epoch => epoch.End)
-            .Last(epoch => epoch.End <= DateTime.UtcNow.ToUnixTimeSeconds());
+            .OrderBy(epoch => DashboardFactory.GetFinishedEnd(epoch))
+            .Last(epoch => DashboardFactory.GetFinishedEnd(epoch) <= DateTime.UtcNow.ToUnixTimeSeconds());
 
         var votiumDataV1 = new DashboardFactory.VotiumDataV1(
             epochsVotiumV1);
@@ -86,8 +86,8 @@ public class Dashboards
            .Map(toList);
 
         var latestFinishedEpochFxn = epochsFxn
-           .OrderBy(epoch => epoch.End)
-           .Last(epoch => epoch.End <= DateTime.UtcNow.ToUnixTimeSeconds());
+           .OrderBy(epoch => DashboardFactory.GetFinishedEnd(epoch))
+           .Last(epoch => DashboardFactory.GetFinishedEnd(epoch) <= DateTime.UtcNow.ToUnixTimeSeconds());
 
         var fxnData = new DashboardFactory.FxnData(
             epochsFxn,

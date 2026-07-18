@@ -13,6 +13,8 @@ namespace Llama.Airforce.Jobs.Factories;
 
 public static class DashboardFactory
 {
+    public const long OnchainGaugeVotingOvertimeSeconds = 10 * 60;
+
     public record VotiumDataV1(
         Lst<Db.Bribes.Epoch> Epochs);
 
@@ -33,6 +35,15 @@ public static class DashboardFactory
         VotiumDataV2 VotiumDataV2,
         FxnData FxnData,
         AuraData AuraData);
+
+    public static long GetFinishedEnd(Db.Bribes.EpochV2 epoch)
+    {
+        var overtime = string.Equals(epoch.VoteSource, "convex-onchain", StringComparison.OrdinalIgnoreCase)
+            ? OnchainGaugeVotingOvertimeSeconds
+            : 0;
+
+        return epoch.End + overtime;
+    }
 
     public static Func<
             ILogger,
@@ -121,6 +132,7 @@ public static class DashboardFactory
                         Protocol = epoch.Protocol,
                         Round = epoch.Round,
                         Proposal = epoch.Proposal,
+                        VoteSource = "snapshot",
                         End = epoch.End,
                         TotalAmountDollars = totalAmountDollars,
                         DollarPerVlAsset = totalAmountBribed > 0
@@ -142,6 +154,7 @@ public static class DashboardFactory
                         Protocol = epoch.Protocol,
                         Round = epoch.Round,
                         Proposal = epoch.Proposal,
+                        VoteSource = epoch.VoteSource ?? "snapshot",
                         End = epoch.End,
                         TotalAmountDollars = totalAmountDollars,
                         DollarPerVlAsset = totalAmountBribed > 0
@@ -219,6 +232,7 @@ public static class DashboardFactory
                         Protocol = epoch.Protocol,
                         Round = epoch.Round,
                         Proposal = epoch.Proposal,
+                        VoteSource = epoch.VoteSource ?? "snapshot",
                         End = epoch.End,
                         TotalAmountDollars = totalAmountDollars,
                         DollarPerVlAsset = totalAmountBribed > 0
@@ -292,6 +306,7 @@ public static class DashboardFactory
                         Protocol = epoch.Protocol,
                         Round = epoch.Round,
                         Proposal = epoch.Proposal,
+                        VoteSource = "snapshot",
                         End = epoch.End,
                         TotalAmountDollars = totalAmountDollars,
                         DollarPerVlAsset = totalAmountBribed > 0

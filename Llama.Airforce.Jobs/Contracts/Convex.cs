@@ -21,6 +21,13 @@ public static class Convex
     [Function("lockedSupply", "uint256")]
     private class LockedSupplyFunction : FunctionMessage { }
 
+    [Function("findEpochId", "uint256")]
+    private class FindEpochIdFunction : FunctionMessage
+    {
+        [Parameter("uint256", 1)]
+        public BigInteger Time { get; set; }
+    }
+
     [FunctionOutput]
     public class RewardDataOutput : IFunctionOutputDTO
     {
@@ -102,6 +109,16 @@ public static class Convex
         .Eth
         .GetContractQueryHandler<LockedSupplyFunction>()
         .QueryAsync<BigInteger>(Addresses.Convex.Locked2, new LockedSupplyFunction()));
+
+    public static Func<IWeb3, long, Task<BigInteger>> FindEpochId = fun((
+        IWeb3 web3,
+        long time) => web3
+       .Eth
+       .GetContractQueryHandler<FindEpochIdFunction>()
+       .QueryAsync<BigInteger>(Addresses.Convex.Locked2, new FindEpochIdFunction
+       {
+           Time = time
+       }));
 
     public static Func<IWeb3, Task<RewardDataOutput>> GetRewardRate = fun((IWeb3 web3) => web3
         .Eth

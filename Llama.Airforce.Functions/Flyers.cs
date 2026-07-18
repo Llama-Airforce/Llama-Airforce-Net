@@ -2,6 +2,7 @@ using LanguageExt;
 using Llama.Airforce.Database.Contexts;
 using Llama.Airforce.Domain.Models;
 using Llama.Airforce.Jobs.Extensions;
+using Llama.Airforce.Jobs.Factories;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Nethereum.Web3;
@@ -47,8 +48,8 @@ public class Flyers
             Protocol.ConvexCrv.ToProtocolString());
 
         var latestFinishedEpochVotium = epochsVotium
-            .OrderBy(epoch => epoch.End)
-            .Last(epoch => epoch.End <= DateTime.UtcNow.ToUnixTimeSeconds());
+            .OrderBy(epoch => DashboardFactory.GetFinishedEnd(epoch))
+            .Last(epoch => DashboardFactory.GetFinishedEnd(epoch) <= DateTime.UtcNow.ToUnixTimeSeconds());
 
         var epochsPrisma = await BribesV2Context
            .GetAllAsync(

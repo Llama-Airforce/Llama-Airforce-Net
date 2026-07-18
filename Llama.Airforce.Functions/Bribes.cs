@@ -42,13 +42,16 @@ public class Bribes
     {
         var lastEpochOnly = Config.GetValue<bool>("LastEpochOnly");
         var graphApiKey = Config.GetValue<string>("GRAPH_API_KEY");
+        var onchainVoting = BribesV2Factory.OnchainVotingOptions.FromStrings(
+            Config["CONVEX_ONCHAIN_CVX_CRV_CUTOVER_ROUND"],
+            Config["CONVEX_ONCHAIN_CVX_CRV_FIRST_PROPOSAL_ID"]);
 
         await Jobs.Jobs.BribesV2.UpdateBribes(
             Logger,
             BribesV2Context,
             HttpClientFactory.CreateClient,
             Web3ETH,
-            new BribesV2Factory.OptionsGetBribes(Protocol.ConvexCrv, lastEpochOnly, graphApiKey),
+            new BribesV2Factory.OptionsGetBribes(Protocol.ConvexCrv, lastEpochOnly, graphApiKey, onchainVoting),
             None);
     }
 }
