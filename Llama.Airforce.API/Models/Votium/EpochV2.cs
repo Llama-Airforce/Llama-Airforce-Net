@@ -1,4 +1,5 @@
 ﻿namespace Llama.Airforce.API.Models.Votium;
+
 using Db = Database.Models;
 
 public class EpochV2

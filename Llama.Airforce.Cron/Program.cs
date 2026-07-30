@@ -27,7 +27,7 @@ var web3ETH = new Web3(alchemy);
 var serviceProvider = new ServiceCollection()
    .AddLogging(configure => configure.AddConsole())
    .AddHttpClient()
-    // Remove annoying HTTP logging which ignores host.json.
+   // Remove annoying HTTP logging which ignores host.json.
    .RemoveAll<IHttpMessageHandlerBuilderFilter>()
    .AddContexts(configuration)
    .AddSingleton<IWeb3>(web3ETH)

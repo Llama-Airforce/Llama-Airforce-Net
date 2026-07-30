@@ -138,7 +138,7 @@ public static class Convex
             IWeb3,
             EitherAsync<Error, double>>
         GetLockedApr = fun((
-            Func<HttpClient> httpFactory, 
+            Func<HttpClient> httpFactory,
             IWeb3 web3) =>
     {
         var cvxPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Convex.Token, Network.Ethereum, Some(web3));
@@ -244,7 +244,7 @@ public static class Convex
         GetLockedCrvUsd = fun((
             Func<HttpClient> httpFactory,
             IWeb3 web3) => PriceFunctions
-        .GetPrice(httpFactory,Addresses.Curve.Token, Network.Ethereum, Some(web3))
+        .GetPrice(httpFactory, Addresses.Curve.Token, Network.Ethereum, Some(web3))
         .MapAsync(async crvPrice =>
         {
             var crvLocked = await ERC20.GetTotalSupply(web3, Addresses.CvxCrv.Token).DivideByDecimals(CurveDecimals);

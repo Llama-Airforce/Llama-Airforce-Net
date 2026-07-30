@@ -515,7 +515,8 @@ public static class BribesV2Factory
                .Find(bribe.Gauge)
                .Match(
                     Some: x => Either<Error, string>.Right(x),
-                    None: () => {
+                    None: () =>
+                    {
                         logger.LogWarning($"Could not find pool name for gauge '{bribe.Gauge}'");
                         return Either<Error, string>.Right("");
                     })
