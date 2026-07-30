@@ -27,7 +27,7 @@ var web3ETH = new Web3(alchemy);
 var serviceProvider = new ServiceCollection()
    .AddLogging(configure => configure.AddConsole())
    .AddHttpClient()
-    // Remove annoying HTTP logging which ignores host.json.
+   // Remove annoying HTTP logging which ignores host.json.
    .RemoveAll<IHttpMessageHandlerBuilderFilter>()
    .AddContexts(configuration)
    .AddSingleton<IWeb3>(web3ETH)
@@ -46,6 +46,12 @@ logger.LogInformation("Cronjobs starting...");
 
 var graphApiKey = configuration["GRAPH_API_KEY"];
 var liveEpochCheck = configuration.GetValue<bool>("LIVE_EPOCH_CHECK");
+var onchainCrv = BribesV2Factory.OnchainVotingOptions.FromStrings(
+    configuration["CONVEX_ONCHAIN_CVX_CRV_CUTOVER_ROUND"],
+    configuration["CONVEX_ONCHAIN_CVX_CRV_FIRST_PROPOSAL_ID"]);
+var onchainFxn = BribesV2Factory.OnchainVotingOptions.FromStrings(
+    configuration["CONVEX_ONCHAIN_CVX_FXN_CUTOVER_ROUND"],
+    configuration["CONVEX_ONCHAIN_CVX_FXN_FIRST_PROPOSAL_ID"]);
 if (!liveEpochCheck)
 {
     logger.LogInformation("Skipping live epoch check");
@@ -67,7 +73,7 @@ else
         bribesV2Context,
         httpFactory.CreateClient,
         web3ETH,
-        new BribesV2Factory.OptionsGetBribes(Protocol.ConvexFxn, true, graphApiKey),
+        new BribesV2Factory.OptionsGetBribes(Protocol.ConvexFxn, true, graphApiKey, onchainFxn),
         None);
 
     // Update Convex bribes.
@@ -76,7 +82,7 @@ else
         bribesV2Context,
         httpFactory.CreateClient,
         web3ETH,
-        new BribesV2Factory.OptionsGetBribes(Protocol.ConvexCrv, true, graphApiKey),
+        new BribesV2Factory.OptionsGetBribes(Protocol.ConvexCrv, true, graphApiKey, onchainCrv),
         None);
 }
 
@@ -94,8 +100,8 @@ var epochsVotiumV2 = await bribesV2Context
    .Map(toList);
 
 var latestFinishedEpochVotium = epochsVotiumV2
-    .OrderBy(epoch => epoch.End)
-    .Last(epoch => epoch.End <= DateTime.UtcNow.ToUnixTimeSeconds());
+    .OrderBy(epoch => DashboardFactory.GetFinishedEnd(epoch))
+    .Last(epoch => DashboardFactory.GetFinishedEnd(epoch) <= DateTime.UtcNow.ToUnixTimeSeconds());
 
 var votiumDataV1 = new DashboardFactory.VotiumDataV1(
     epochsVotiumV1);
@@ -112,8 +118,8 @@ var epochsFxn = await bribesV2Context
    .Map(toList);
 
 var latestFinishedEpochFxn = epochsFxn
-   .OrderBy(epoch => epoch.End)
-   .Last(epoch => epoch.End <= DateTime.UtcNow.ToUnixTimeSeconds());
+   .OrderBy(epoch => DashboardFactory.GetFinishedEnd(epoch))
+   .Last(epoch => DashboardFactory.GetFinishedEnd(epoch) <= DateTime.UtcNow.ToUnixTimeSeconds());
 
 var fxnData = new DashboardFactory.FxnData(
     epochsFxn,

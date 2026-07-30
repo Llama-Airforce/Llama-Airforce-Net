@@ -17,8 +17,14 @@ public class EpochV2
     [JsonProperty("round")]
     public int Round { get; set; }
 
+    [JsonProperty("sourceRound")]
+    public int? SourceRound { get; set; }
+
     [JsonProperty("proposal")]
     public string Proposal { get; set; }
+
+    [JsonProperty("voteSource")]
+    public string VoteSource { get; set; } = "snapshot";
 
     [JsonProperty("end")]
     public long End { get; set; }
