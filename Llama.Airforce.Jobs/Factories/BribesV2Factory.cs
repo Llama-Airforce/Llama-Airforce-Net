@@ -6,6 +6,7 @@ using LanguageExt.Common;
 using LanguageExt.UnsafeValueAccess;
 using Llama.Airforce.Database.Models.Bribes;
 using Llama.Airforce.Domain.Models;
+using Llama.Airforce.Jobs.Contracts;
 using Llama.Airforce.Jobs.Extensions;
 using Llama.Airforce.SeedWork.Extensions;
 using Llama.Airforce.SeedWork.Types;
@@ -363,7 +364,7 @@ public static class BribesV2Factory
         var proposalId = options.OnchainVoting.ToProposalId(publicRound);
         var proposal_ =
             from platform in platform_
-            from proposal in Contracts.ConvexOnchainGaugeVoting
+            from proposal in ConvexOnchainGaugeVoting
                .GetProposal(web3, platform, proposalId)
                .ToEitherAsync()
             from expectedEpoch in GetExpectedOnchainVotingEpoch(web3, options.Protocol, votiumRound)
@@ -400,7 +401,7 @@ public static class BribesV2Factory
                .DistinctBy(bribe => bribe.Gauge)
                .Map(async bribe =>
                 {
-                    var score = await Contracts.ConvexOnchainGaugeVoting
+                    var score = await ConvexOnchainGaugeVoting
                        .GaugeTotal(web3, platform, proposalId, bribe.Gauge)
                        .Map(x => x.DivideByDecimals(18));
 
@@ -421,7 +422,7 @@ public static class BribesV2Factory
 
         var scoresTotal_ =
             from platform in platform_
-            from total in Contracts.ConvexOnchainGaugeVoting
+            from total in ConvexOnchainGaugeVoting
                .VoteTotal(web3, platform, proposalId)
                .Map(x => x.DivideByDecimals(18))
                .ToEitherAsync()
@@ -456,17 +457,17 @@ public static class BribesV2Factory
            .GetEpochDate(protocol, round)
            .ToUnixTimeSeconds();
 
-        return Contracts.Convex
+        return Convex
            .FindEpochId(web3, expectedRoundDate)
            .ToEitherAsync();
     }
 
-    private static EitherAsync<Error, Contracts.ConvexOnchainGaugeVoting.ProposalOutput> ValidateOnchainProposal(
+    private static EitherAsync<Error, ConvexOnchainGaugeVoting.ProposalOutput> ValidateOnchainProposal(
         Protocol protocol,
         int publicRound,
         int votiumRound,
         int proposalId,
-        Contracts.ConvexOnchainGaugeVoting.ProposalOutput proposal,
+        ConvexOnchainGaugeVoting.ProposalOutput proposal,
         BigInteger expectedEpoch)
     {
         var roundLabel = publicRound == votiumRound
@@ -474,17 +475,17 @@ public static class BribesV2Factory
             : $"round {publicRound} (Votium round {votiumRound})";
 
         if (proposal.EndTime == 0)
-            return LeftAsync<Error, Contracts.ConvexOnchainGaugeVoting.ProposalOutput>(
+            return LeftAsync<Error, ConvexOnchainGaugeVoting.ProposalOutput>(
                 Error.New(
                     $"On-chain voting proposal {proposalId} for {protocol} {roundLabel} is empty or force-ended"));
 
         var previousExpectedEpoch = expectedEpoch - BigInteger.One;
         if (proposal.Epoch != expectedEpoch && proposal.Epoch != previousExpectedEpoch)
-            return LeftAsync<Error, Contracts.ConvexOnchainGaugeVoting.ProposalOutput>(
+            return LeftAsync<Error, ConvexOnchainGaugeVoting.ProposalOutput>(
                 Error.New(
                     $"On-chain voting proposal {proposalId} for {protocol} {roundLabel} has vlCVX epoch {proposal.Epoch}, expected {expectedEpoch} or {previousExpectedEpoch}"));
 
-        return RightAsync<Error, Contracts.ConvexOnchainGaugeVoting.ProposalOutput>(proposal);
+        return RightAsync<Error, ConvexOnchainGaugeVoting.ProposalOutput>(proposal);
     }
 
     public record ProcessBribeOptions(List<string>? SnapshotChoices = null);
@@ -506,8 +507,8 @@ public static class BribesV2Factory
             Dom.BribeV2 bribe) =>
         {
             var tokenAddress = Address.Of(bribe.Token);
-            var token_ = Contracts.ERC20.GetSymbol(web3, tokenAddress).ToEitherAsync();
-            var decimals_ = Contracts.ERC20.GetDecimals(web3, tokenAddress).ToEitherAsync();
+            var token_ = ERC20.GetSymbol(web3, tokenAddress).ToEitherAsync();
+            var decimals_ = ERC20.GetDecimals(web3, tokenAddress).ToEitherAsync();
 
             var amount_ = decimals_.Map(decimals => BigInteger.Parse(bribe.Amount).DivideByDecimals(decimals));
             var maxPerVote_ = decimals_.Map(decimals => BigInteger.Parse(bribe.MaxPerVote).DivideByDecimals(decimals));
