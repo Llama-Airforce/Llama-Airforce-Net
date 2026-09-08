@@ -21,6 +21,9 @@ public static class CurveApi
         [JsonProperty("gauge")]
         public string Gauge { get; set; }
 
+        [JsonProperty("rootGauge")]
+        public string RootGauge { get; set; }
+
         [JsonProperty("shortName")]
         public string ShortName { get; set; }
     }
@@ -47,7 +50,7 @@ public static class CurveApi
                         acc,
                         kv) =>
                 {
-                    var address = Address.Of(kv.Value.Gauge).ValueUnsafe();
+                    var address = Address.Of(string.IsNullOrEmpty(kv.Value.RootGauge) ? kv.Value.Gauge : kv.Value.RootGauge).ValueUnsafe();
                     var gauge = new Gauge(address, kv.Value.ShortName);
 
                     return acc.AddOrUpdate(address, _ => gauge, gauge);
