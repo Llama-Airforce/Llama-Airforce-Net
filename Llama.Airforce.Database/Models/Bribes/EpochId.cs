@@ -39,11 +39,6 @@ public class EpochId : ValueObject
         StringMax.Of(epoch.Protocol),
         epoch.Round);
 
-    public static implicit operator EpochId(EpochV3 epoch) => new(
-        StringMax.Of(epoch.Platform),
-        StringMax.Of(epoch.Protocol),
-        epoch.Round);
-
     public static implicit operator string(EpochId epochId) => epochId.ToString();
 
     protected override IEnumerable<object> GetAtomicValues()

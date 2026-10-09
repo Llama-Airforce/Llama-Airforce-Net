@@ -110,7 +110,7 @@ rounds(
                .MapTry(data => toList(data
                    .Data
                    .EpochList
-                    // Filter out epochs that haven't started yet.
+                   // Filter out epochs that haven't started yet.
                    .Where(epoch =>
                     {
                         var epochDate = GetEpochDate(protocol, epoch.Id);
@@ -119,46 +119,4 @@ rounds(
                    .Select(epoch => (Dom.EpochV2)epoch)
                    .OrderBy(epoch => epoch.Round)));
         });
-
-    /// <summary>
-    /// Returns Votium epoch & bribe history from The Graph
-    /// </summary>
-    public static Func<
-            Func<HttpClient>,
-            string,
-            EitherAsync<Error, Lst<Dom.EpochV3>>>
-        GetEpochsV3 = fun((Func<HttpClient> httpFactory, string graphApiKey) =>
-        {
-            const string Query = @"{
-rounds(
-    where: { bribeCount_gt: 0 }
-    first: 1000
-    orderBy: initiatedAt
-    orderDirection: asc
-) {
-  id
-  initiatedAt
-  bribeCount
-  incentives {
-    gauge
-    token
-    amount
-    maxPerVote
-  }
-} }";
-
-        return Subgraph.GetData(httpFactory, SUBGRAPH_URL_VOTIUM_V2.Replace("{GRAPH_API_KEY}", graphApiKey), Query)
-           .MapTry(JsonConvert.DeserializeObject<RequestEpochsVotiumV3>)
-           .MapTry(data => toList(data
-               .Data
-               .EpochList
-               // Filter out epochs that haven't started yet.
-               .Where(epoch =>
-               {
-                   var epochStart = 1348 * 86400 * 14 + epoch.Id * 86400 * 14;
-                   var epochDate = DateTimeExt.FromUnixTimeSeconds(epochStart);
-                   return epochDate <= DateTime.Now;
-               })
-               .Select(epoch => (Dom.EpochV3)epoch)));
-    });
 }

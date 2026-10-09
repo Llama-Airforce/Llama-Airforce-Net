@@ -12,16 +12,13 @@ public class BribesController : ControllerBase
 {
     private readonly BribesContext Context;
     private readonly BribesV2Context ContextV2;
-    private readonly BribesV3Context ContextV3;
 
     public BribesController(
         BribesContext context,
-        BribesV2Context contextV2,
-        BribesV3Context contextV3)
+        BribesV2Context contextV2)
     {
         Context = context;
         ContextV2 = contextV2;
-        ContextV3 = contextV3;
     }
 
     public class IndexParams
@@ -29,7 +26,6 @@ public class BribesController : ControllerBase
         public string? Platform { get; set; }
         public string? Protocol { get; set; }
         public string? Round { get; set; }
-        public bool? L2 { get; set; }
     }
 
     [Route("")]
@@ -38,7 +34,6 @@ public class BribesController : ControllerBase
     {
         var platform = string.IsNullOrWhiteSpace(body.Platform) ? "votium" : body.Platform;
         var protocol = string.IsNullOrWhiteSpace(body.Protocol) ? "cvx-crv" : body.Protocol;
-        var l2 = body.L2 ?? false;
 
         var lastRoundV1 = await Context
             .Rounds(platform, protocol)
@@ -48,13 +43,7 @@ public class BribesController : ControllerBase
            .Rounds(platform, protocol)
            .Map(rs => rs.LastOrDefault());
 
-        var lastRoundV3 = await ContextV3
-           .Rounds(platform, protocol)
-           .Map(rs => rs.LastOrDefault());
-
-        var lastRound = l2
-            ? lastRoundV3
-            : new[] { lastRoundV1, lastRoundV2 }.Max();
+        var lastRound = new[] { lastRoundV1, lastRoundV2 }.Max();
 
         var hasRound = int.TryParse(body.Round, out var round);
         if (!hasRound || round > lastRound || round < 1)
@@ -78,7 +67,7 @@ public class BribesController : ControllerBase
                 }));
 
         // V1
-        if (!l2 && round <= lastRoundV1)
+        if (round <= lastRoundV1)
         {
             var epoch = await Context
                .GetAsync(epochId)
@@ -88,21 +77,11 @@ public class BribesController : ControllerBase
         }
 
         // V2
-        if (!l2 && round <= lastRoundV2)
+        else
         {
             var epoch = await ContextV2
                .GetAsync(epochId)
                .MapT(epoch => (Models.Votium.EpochV2)epoch);
-
-            return CreateResult(epoch);
-        }
-
-        // V3
-        else
-        {
-            var epoch = await ContextV3
-               .GetAsync(epochId)
-               .MapT(epoch => (Models.Votium.EpochV3)epoch);
 
             return CreateResult(epoch);
         }
@@ -123,9 +102,8 @@ public class BribesController : ControllerBase
 
         var roundsV1 = await Context.Rounds(platform, protocol);
         var roundsV2 = await ContextV2.Rounds(platform, protocol);
-        var roundsV3 = await ContextV3.Rounds(platform, protocol);
 
-        var rounds = roundsV1.Concat(roundsV2).Concat(roundsV3).Distinct();
+        var rounds = roundsV1.Concat(roundsV2).Distinct();
 
         return new JsonResult(new
         {
