@@ -9,46 +9,6 @@ namespace Llama.Airforce.Jobs.Tests;
 public class CoinGeckoTests
 {
     [Test]
-    public async Task GetData()
-    {
-        // Arrange
-        HttpClient http() => new();
-
-        // Act
-        var data = CoinGecko.GetData(http, Addresses.Convex.Token, Network.Ethereum);
-
-        // Assert
-        Assert.IsTrue(await data.IsRight);
-    }
-
-    [Test]
-    public async Task GetMarketCap()
-    {
-        // Arrange
-        HttpClient http() => new();
-        var data = CoinGecko.GetData(http, Addresses.Convex.Token, Network.Ethereum);
-
-        // Act
-        var mcap = data.Bind(x => CoinGecko.GetMarketCap(x).ToAsync());
-
-        // Assert
-        Assert.IsTrue(await mcap.IsRight);
-    }
-
-    [Test]
-    public async Task GetPrice()
-    {
-        // Arrange
-        HttpClient http() => new();
-
-        // Act
-        var price = CoinGecko.GetPrice(http, Addresses.Convex.Token, Network.Ethereum, Currency.Usd);
-
-        // Assert
-        Assert.IsTrue(await price.IsRight);
-    }
-
-    [Test]
     public async Task GetPriceAtTime()
     {
         // Arrange

@@ -17,9 +17,6 @@ public static class ERC20
     [Function("totalSupply", "uint256")]
     private class TotalSupplyFunction : FunctionMessage { }
 
-    [Function("lockedSupply", "uint256")]
-    private class LockedSupplyFunction : FunctionMessage { }
-
     [Function("decimals", "uint256")]
     private class DecimalsFunction : FunctionMessage { }
 
@@ -41,11 +38,6 @@ public static class ERC20
         .Eth
         .GetContractQueryHandler<TotalSupplyFunction>()
         .QueryAsync<BigInteger>(erc20, new TotalSupplyFunction()));
-
-    public static Func<IWeb3, Address, Task<BigInteger>> GetLockedSupply = fun((IWeb3 web3, Address erc20) => web3
-        .Eth
-        .GetContractQueryHandler<LockedSupplyFunction>()
-        .QueryAsync<BigInteger>(erc20, new LockedSupplyFunction()));
 
     public static Func<IWeb3, Address, Task<BigInteger>> GetDecimals = fun((IWeb3 web3, Address erc20) => web3
         .Eth

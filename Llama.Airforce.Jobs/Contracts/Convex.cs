@@ -60,7 +60,6 @@ public static class Convex
 
     public static int CvxDecimals = 18;
     public static int CurveDecimals = 18;
-    public static double RewardFee = 0.17;
 
     public static Func<IWeb3, Task<BigInteger>> GetBoostedSupply = fun((IWeb3 web3) => web3
         .Eth

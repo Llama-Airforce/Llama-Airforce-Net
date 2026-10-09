@@ -53,7 +53,6 @@ public static class Addresses
     public static class CvxCrv
     {
         public static Address Token = Address.Of("0x62B9c7356A2Dc64a1969e19C23e4f579F9810Aa7");
-        public static Address Staked = Address.Of("0x3Fe65692bfCD0e6CF84cB1E7d24108E434A7587e");
     }
 
     public static class CurveV1LP
