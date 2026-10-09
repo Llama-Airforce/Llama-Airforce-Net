@@ -40,8 +40,6 @@ public static class Addresses
         public static Address VoterProxyCurve = Address.Of("0x989AEb4d175e16225E39E87d0D97A3360524AD80");
         public static Address VoterProxyFxn = Address.Of("0xd11a4Ee017cA0BECA8FA45fF2abFe9C6267b7881");
 
-        public static Address L2GaugeVotingPlatform = Address.Of("0xfabccfc3e63ad25ed7613b2147ff4b9042d2ccaf");
-
         public static Address Core = Address.Of("0xCC07e8BA6bc8aeb18C4AE110C3Da9c7Dce4A3e74");
         public static Address VotingRegistry = Address.Of("0x6C3a56ea7c2DA4ee2876DbDa437173B28f001c34");
         public static Address GaugeDelegation = Address.Of("0xb8270eef1319173dE9f5033FED442F638ff1607d");
