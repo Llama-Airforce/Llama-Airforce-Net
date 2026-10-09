@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using LanguageExt;
 using Microsoft.Azure.Cosmos;
 
 namespace Llama.Airforce.Database.Contexts;
@@ -14,19 +13,6 @@ public class DashboardContext
         string containerName)
     {
         Container = dbClient.GetContainer(dbName, containerName);
-    }
-
-    public async Task<Option<T>> GetAsync<T>(string id) where T : Dashboard
-    {
-        try
-        {
-            var resp = await Container.ReadItemAsync<T>(id, new PartitionKey(id));
-            return resp.Resource;
-        }
-        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
-            return Option<T>.None;
-        }
     }
 
     public async Task UpsertAsync<T>(T info) where T : Dashboard

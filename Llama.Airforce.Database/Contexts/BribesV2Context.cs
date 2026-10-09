@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using LanguageExt;
 using Llama.Airforce.Database.Models.Bribes;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
@@ -18,42 +17,6 @@ public class BribesV2Context
         string containerName)
     {
         Container = dbClient.GetContainer(dbName, containerName);
-    }
-
-    public async Task<List<int>> Rounds(string platform, string protocol)
-    {
-        try
-        {
-            var rounds = new List<int>();
-
-            using var iter = Container
-                .GetItemLinqQueryable<EpochV2>()
-                .Where(epoch => epoch.Platform == platform && epoch.Protocol == protocol)
-                .Select(epoch => epoch.Round)
-                .ToFeedIterator();
-
-            while (iter.HasMoreResults)
-                rounds.AddRange(await iter.ReadNextAsync());
-
-            return rounds.OrderBy(x => x).ToList();
-        }
-        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
-            return new List<int>();
-        }
-    }
-
-    public async Task<Option<EpochV2>> GetAsync(EpochId epochId)
-    {
-        try
-        {
-            var resp = await Container.ReadItemAsync<EpochV2>(epochId, new PartitionKey(epochId));
-            return resp.Resource;
-        }
-        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
-            return Option<EpochV2>.None;
-        }
     }
 
     public async Task<List<EpochV2>> GetAllAsync(string platform, string protocol)
