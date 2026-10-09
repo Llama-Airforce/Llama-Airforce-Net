@@ -29,7 +29,6 @@ public class FlyerFactoryTests
         var alchemy = Configuration["ALCHEMY"];
         var web3 = new Web3(alchemy);
         HttpClient http() => new();
-        var pools = LanguageExt.List.empty<Database.Models.Convex.Pool>();
         var latestFinishedEpoch = new Database.Models.Bribes.EpochV2
         {
             Bribes = new List<Database.Models.Bribes.BribeV2>(),
@@ -37,7 +36,7 @@ public class FlyerFactoryTests
         };
 
         // Act
-        var flyer = FlyerFactory.CreateFlyerConvex(web3, http, pools, List(latestFinishedEpoch));
+        var flyer = FlyerFactory.CreateFlyerConvex(web3, http, List(latestFinishedEpoch));
 
         // Assert
         Assert.IsTrue(await flyer.IsRight);

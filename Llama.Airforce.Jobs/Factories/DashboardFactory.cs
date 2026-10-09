@@ -33,8 +33,7 @@ public static class DashboardFactory
     public record Data(
         VotiumDataV1 VotiumDataV1,
         VotiumDataV2 VotiumDataV2,
-        FxnData FxnData,
-        AuraData AuraData);
+        FxnData FxnData);
 
     public static long GetFinishedEnd(Db.Bribes.EpochV2 epoch)
     {

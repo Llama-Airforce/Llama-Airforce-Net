@@ -1,7 +1,6 @@
 ﻿using LanguageExt;
 using LanguageExt.Common;
 using Llama.Airforce.Jobs.Contracts;
-using Llama.Airforce.Jobs.Extensions;
 using Llama.Airforce.Jobs.Functions;
 using Llama.Airforce.SeedWork.Extensions;
 using Nethereum.Web3;
@@ -17,19 +16,16 @@ public static class FlyerFactory
     public static Func<
             IWeb3,
             Func<HttpClient>,
-            Lst<Db.Convex.Pool>,
             Lst<Db.Bribes.EpochV2>,
             EitherAsync<Error, Db.Convex.Flyer>>
         CreateFlyerConvex = fun((
             IWeb3 web3,
             Func<HttpClient> httpFactory,
-            Lst<Db.Convex.Pool> pools,
             Lst<Db.Bribes.EpochV2> latestFinishedEpochs) =>
         {
             // Coingecko data.
             var marketCap_ = DefiLlama.GetMarketCap(httpFactory, "convex-finance");
             var cvxPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Convex.Token, Network.Ethereum, Some(web3));
-            var crvPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Curve.Token, Network.Ethereum, Some(web3));
 
             // Ethereum data.
             var bribeIncomeBiWeeklyTotal = latestFinishedEpochs
@@ -53,19 +49,6 @@ public static class FlyerFactory
                 select lockedApr * 100 + votiumApr;
 
             var cvxCrvApr_ = Convex.GetCvxCrvApr(httpFactory, web3).Map(x => x * 100);
-            var cvxStaked_ = ERC20.GetTotalSupply(web3, Addresses.Convex.Staked).DivideByDecimals(Convex.CvxDecimals)
-                .ToEitherAsync();
-            var cvxLocked_ = Convex.GetCvxLocked(web3).DivideByDecimals(Convex.CvxDecimals).ToEitherAsync();
-            var crvLocked_ = ERC20.GetTotalSupply(web3, Addresses.CvxCrv.Token).DivideByDecimals(Convex.CurveDecimals)
-                .ToEitherAsync();
-
-            var tvl_ =
-                from cvxPrice in cvxPrice_
-                from crvPrice in crvPrice_
-                from cvxStaked in cvxStaked_
-                from cvxLocked in cvxLocked_
-                from crvLocked in crvLocked_
-                select pools.Sum(pool => pool.Tvl) + (cvxStaked + cvxLocked) * cvxPrice + crvLocked + crvPrice;
 
             var crvLockedDollars_ = Convex.GetLockedCrvUsd(httpFactory, web3);
             var revenueMonthly = 535_500_000 / ((DateTime.Now - Convex.Genesis).Days / (365.25 / 12));
@@ -77,7 +60,6 @@ public static class FlyerFactory
 
             return
                 from marketCap in marketCap_
-                from tvl in tvl_
                 from cvxApr in cvxApr_
                 from cvxCrvApr in cvxCrvApr_
                 from crvLockedDollars in crvLockedDollars_
@@ -89,7 +71,7 @@ public static class FlyerFactory
 
                     CrvLockedDollars = crvLockedDollars,
                     CrvLockedDollarsMonthly = crvLockedDollars / ((DateTime.Now - Convex.Genesis).Days / (365.25 / 12)),
-                    CvxTvl = tvl,
+                    CvxTvl = 0,
                     CvxVotingPercentage = cvxVotingPercentage,
                     CvxMarketCap = marketCap,
                     CvxMarketCapFullyDiluted = 0,

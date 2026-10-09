@@ -34,19 +34,6 @@ public class ConvexTests
     }
 
     [Test]
-    public async Task GetCvxLockedupply()
-    {
-        // Arrange
-        var alchemy = Configuration["ALCHEMY"];
-        var web3 = new Web3(alchemy);
-
-        // Act
-        var cvxLocked = await Convex.GetCvxLocked(web3);
-
-        // Assert
-    }
-
-    [Test]
     public async Task GetRewardRate()
     {
         // Arrange

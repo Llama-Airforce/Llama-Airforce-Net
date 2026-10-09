@@ -29,9 +29,6 @@ public static class Addresses
         public static Address VotingEscrow = Address.Of("0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2");
 
         public static Address GaugeController = Address.Of("0x2F50D538606Fa9EDD2B11E2446BEb18C9D5846bB");
-
-        public static Address FeeDistributor = Address.Of("0xA464e6DCda8AC41e03616F95f4BC98a13b8922Dc");
-        public static Address StableSwapProxy = Address.Of("0xeCb456EA5365865EbAb8a2661B0c503410e9B347");
     }
 
     public static class Convex
@@ -39,7 +36,6 @@ public static class Addresses
         public static Address Token = Address.Of("0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b");
         public static Address Locked = Address.Of("0xD18140b4B819b895A3dba5442F959fA44994AF50");
         public static Address Locked2 = Address.Of("0x72a19342e8f1838460ebfccef09f6585e32db86e");
-        public static Address Staked = Address.Of("0xCF50b810E57Ac33B91dCF525C6ddd9881B139332");
 
         public static Address VoterProxyCurve = Address.Of("0x989AEb4d175e16225E39E87d0D97A3360524AD80");
         public static Address VoterProxyFxn = Address.Of("0xd11a4Ee017cA0BECA8FA45fF2abFe9C6267b7881");

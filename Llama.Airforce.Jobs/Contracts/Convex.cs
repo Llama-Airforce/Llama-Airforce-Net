@@ -18,9 +18,6 @@ public static class Convex
     [Function("boostedSupply", "uint256")]
     private class BoostedSupplyFunction : FunctionMessage { }
 
-    [Function("lockedSupply", "uint256")]
-    private class LockedSupplyFunction : FunctionMessage { }
-
     [Function("findEpochId", "uint256")]
     private class FindEpochIdFunction : FunctionMessage
     {
@@ -54,38 +51,6 @@ public static class Convex
         public string? Address { get; set; }
     }
 
-    [Function("poolLength", "uint256")]
-    private class PoolLengthFunction : FunctionMessage { }
-
-    [FunctionOutput]
-    public class PoolInfoOutput : IFunctionOutputDTO
-    {
-        [Parameter("address", "lptoken", 1)]
-        public string LpToken { get; set; }
-
-        [Parameter("address", "token", 2)]
-        public string Token { get; set; }
-
-        [Parameter("address", "gauge", 3)]
-        public string Gauge { get; set; }
-
-        [Parameter("address", "crvRewards", 4)]
-        public string CrvRewards { get; set; }
-
-        [Parameter("address", "stash", 5)]
-        public string Stash { get; set; }
-
-        [Parameter("bool", "shutdown", 6)]
-        public bool Shutdown { get; set; }
-    }
-
-    [Function("poolInfo")]
-    private class PoolInfoFunction : FunctionMessage
-    {
-        [Parameter("uint256", 1)]
-        public BigInteger PoolId { get; set; }
-    }
-
     #endregion
 
     /// <summary>
@@ -101,14 +66,6 @@ public static class Convex
         .Eth
         .GetContractQueryHandler<BoostedSupplyFunction>()
         .QueryAsync<BigInteger>(Addresses.Convex.Locked2, new BoostedSupplyFunction()));
-
-    /// <summary>
-    /// This is locked total, including the ones that are not yet eligible to vote.
-    /// </summary>
-    public static Func<IWeb3, Task<BigInteger>> GetCvxLocked = fun((IWeb3 web3) => web3
-        .Eth
-        .GetContractQueryHandler<LockedSupplyFunction>()
-        .QueryAsync<BigInteger>(Addresses.Convex.Locked2, new LockedSupplyFunction()));
 
     public static Func<IWeb3, long, Task<BigInteger>> FindEpochId = fun((
         IWeb3 web3,

@@ -105,44 +105,4 @@ public static class Curve
             var discount = 1.0 - (double)((BigDecimal)(tknOut - new BigInteger(Math.Pow(10, 21))) / tknOut);
             return flip ? 1 / discount : discount;
         }));
-
-    public class AdminTransfer
-    {
-        public AdminTransfer(int block, double value, string token)
-        {
-            Block = block;
-            Value = value;
-            Token = token;
-        }
-
-        public int Block { get; set; }
-        public double Value { get; set; }
-        public string Token { get; set; }
-    }
-
-    public class Fees
-    {
-        public Fees(int timestamp, double value)
-        {
-            TimeStamp = timestamp;
-            Value = value;
-        }
-
-        public int TimeStamp { get; set; }
-        public double Value { get; set; }
-    }
-
-    public class Emissions
-    {
-        public Emissions(int timestamp, double value, double crvAmount)
-        {
-            TimeStamp = timestamp;
-            CrvAmount = crvAmount;
-            Value = value;
-        }
-
-        public int TimeStamp { get; set; }
-        public double Value { get; set; }
-        public double CrvAmount { get; set; }
-    }
 }

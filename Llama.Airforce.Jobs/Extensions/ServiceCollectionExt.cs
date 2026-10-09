@@ -26,62 +26,6 @@ public static class ServiceCollectionExt
             var primaryKey = configuration.GetValue<string>("DB_PRIMARY_KEY");
             var dbName = configuration.GetValue<string>("DB_NAME");
 
-            return PoolContext
-                .Create(
-                    endpointUri: endpointUri,
-                    primaryKey: primaryKey,
-                    dbName: dbName)
-                .GetAwaiter()
-                .GetResult();
-        })
-        .AddTransient((_) =>
-        {
-            var endpointUri = configuration.GetValue<string>("DB_ENDPOINT");
-            var primaryKey = configuration.GetValue<string>("DB_PRIMARY_KEY");
-            var dbName = configuration.GetValue<string>("DB_NAME");
-
-            return PoolSnapshotsContext
-                .Create(
-                    endpointUri: endpointUri,
-                    primaryKey: primaryKey,
-                    dbName: dbName)
-                .GetAwaiter()
-                .GetResult();
-        })
-        .AddTransient((_) =>
-        {
-            var endpointUri = configuration.GetValue<string>("DB_ENDPOINT");
-            var primaryKey = configuration.GetValue<string>("DB_PRIMARY_KEY");
-            var dbName = configuration.GetValue<string>("DB_NAME");
-
-            return CurvePoolContext
-                .Create(
-                    endpointUri: endpointUri,
-                    primaryKey: primaryKey,
-                    dbName: dbName)
-                .GetAwaiter()
-                .GetResult();
-        })
-        .AddTransient((_) =>
-        {
-            var endpointUri = configuration.GetValue<string>("DB_ENDPOINT");
-            var primaryKey = configuration.GetValue<string>("DB_PRIMARY_KEY");
-            var dbName = configuration.GetValue<string>("DB_NAME");
-
-            return CurvePoolSnapshotsContext
-                .Create(
-                    endpointUri: endpointUri,
-                    primaryKey: primaryKey,
-                    dbName: dbName)
-                .GetAwaiter()
-                .GetResult();
-        })
-        .AddTransient((_) =>
-        {
-            var endpointUri = configuration.GetValue<string>("DB_ENDPOINT");
-            var primaryKey = configuration.GetValue<string>("DB_PRIMARY_KEY");
-            var dbName = configuration.GetValue<string>("DB_NAME");
-
             return BribesContext
                 .Create(
                     endpointUri: endpointUri,

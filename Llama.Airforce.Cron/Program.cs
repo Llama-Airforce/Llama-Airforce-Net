@@ -27,7 +27,7 @@ var web3ETH = new Web3(alchemy);
 var serviceProvider = new ServiceCollection()
    .AddLogging(configure => configure.AddConsole())
    .AddHttpClient()
-   // Remove annoying HTTP logging which ignores host.json.
+   // Disable automatic HTTP client logging.
    .RemoveAll<IHttpMessageHandlerBuilderFilter>()
    .AddContexts(configuration)
    .AddSingleton<IWeb3>(web3ETH)
@@ -40,7 +40,6 @@ var httpFactory = serviceProvider.GetService<IHttpClientFactory>();
 var bribesContext = serviceProvider.GetService<BribesContext>();
 var bribesV2Context = serviceProvider.GetService<BribesV2Context>();
 var dashboardContext = serviceProvider.GetService<DashboardContext>();
-var convexPoolContext = serviceProvider.GetService<PoolContext>();
 
 logger.LogInformation("Cronjobs starting...");
 
@@ -125,26 +124,10 @@ var fxnData = new DashboardFactory.FxnData(
     epochsFxn,
     latestFinishedEpochFxn);
 
-// Get Aura data.
-var epochsAura = await bribesContext
-    .GetAllAsync(
-        Platform.HiddenHand.ToPlatformString(),
-        Protocol.AuraBal.ToProtocolString())
-    .Map(toList);
-
-var latestFinishedEpochAura = epochsAura
-    .OrderBy(epoch => epoch.End)
-    .Last(epoch => epoch.End <= DateTime.UtcNow.ToUnixTimeSeconds());
-
-var auraData = new DashboardFactory.AuraData(
-    epochsAura,
-    latestFinishedEpochAura);
-
 var data = new DashboardFactory.Data(
     votiumDataV1,
     votiumDataV2,
-    fxnData,
-    auraData);
+    fxnData);
 
 await Llama.Airforce.Jobs.Jobs.Dashboards.UpdateDashboards(
     logger,
@@ -154,16 +137,11 @@ await Llama.Airforce.Jobs.Jobs.Dashboards.UpdateDashboards(
     data);
 
 // Update flyers
-var poolsConvex = await convexPoolContext
-   .GetAllAsync()
-   .Map(toList);
-
 await Llama.Airforce.Jobs.Jobs.Flyers.UpdateFlyerConvex(
     logger,
     dashboardContext,
     web3ETH,
     httpFactory.CreateClient,
-    poolsConvex,
     List(latestFinishedEpochVotium));
 
 await Llama.Airforce.Jobs.Jobs.Flyers.UpdateFlyerAura(

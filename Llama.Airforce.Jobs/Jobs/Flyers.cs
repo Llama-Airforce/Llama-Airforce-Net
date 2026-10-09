@@ -15,7 +15,6 @@ public class Flyers
             DashboardContext,
             IWeb3,
             Func<HttpClient>,
-            Lst<Db.Convex.Pool>,
             Lst<Db.Bribes.EpochV2>,
             Task>
         UpdateFlyerConvex = fun((
@@ -23,10 +22,9 @@ public class Flyers
             DashboardContext context,
             IWeb3 web3,
             Func<HttpClient> httpFactory,
-            Lst<Db.Convex.Pool> pools,
             Lst<Db.Bribes.EpochV2> latestFinishedEpoch) =>
         FlyerFactory
-            .CreateFlyerConvex(web3, httpFactory, pools, latestFinishedEpoch)
+            .CreateFlyerConvex(web3, httpFactory, latestFinishedEpoch)
             .MatchAsync(
                 RightAsync: async f =>
                 {
