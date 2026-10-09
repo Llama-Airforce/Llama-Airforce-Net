@@ -1,9 +1,6 @@
-﻿using System.Globalization;
-using System.Numerics;
-using System.Text.RegularExpressions;
+﻿using System.Numerics;
 using LanguageExt;
 using LanguageExt.Common;
-using LanguageExt.UnsafeValueAccess;
 using Llama.Airforce.Database.Models.Bribes;
 using Llama.Airforce.Domain.Models;
 using Llama.Airforce.Jobs.Contracts;
@@ -25,7 +22,7 @@ public static class BribesV2Factory
         Protocol Protocol,
         bool LastEpochOnly,
         string GraphApiKey,
-        OnchainVotingOptions? OnchainVoting = null);
+        OnchainVotingOptions OnchainVoting);
 
     public record OnchainVotingOptions(
         int CutoverRound,
@@ -153,12 +150,7 @@ public static class BribesV2Factory
             : toList(epochs
                .Select((epoch, i) => new EpochToProcess(epoch, i + indexOffset)));
 
-        var needsSnapshotProposalIds = epochsToProcess
-           .Any(epoch => !IsOnchainRound(options.Protocol, epoch.PublicRound, options.OnchainVoting));
-
-        var proposalIds_ = needsSnapshotProposalIds
-            ? bribeFunctions.GetProposalIds()
-            : RightAsync<Error, Map<string, (int Index, string Title)>>(Map<string, (int Index, string Title)>());
+        var proposalIds_ = RightAsync<Error, Map<string, (int Index, string Title)>>(Map<string, (int Index, string Title)>());
 
         return proposalIds_
            .Bind(proposalIds => epochsToProcess
@@ -210,127 +202,11 @@ public static class BribesV2Factory
 
             logger.LogInformation($"Updating bribes: {epochId}");
 
-            // Find proposal id by regex matching all proposal titles with the correct date.
-            var epoch = options.Epoch;
-            if (IsOnchainRound(options.Protocol, publicRound, options.OnchainVoting))
-                return ProcessOnchainEpoch(logger, web3, options, getPrice);
+            if (!IsOnchainRound(options.Protocol, publicRound, options.OnchainVoting))
+                return LeftAsync<Error, Db.Bribes.EpochV2>(
+                    Error.New($"Round {publicRound} for {options.Protocol} is not eligible for on-chain voting"));
 
-            var epochDate = Subgraphs.Votium.GetEpochDate(options.Protocol, epoch.Round);
-            var epochMonth = epochDate.ToString("MMM", CultureInfo.InvariantCulture);
-            var titleRegex = $"{epochDate.Day}(st|nd|rd|th) {epochMonth} {epochDate.Year}";
-
-            // There's been a few cases where gauge votes had to be remade on Snapshot, like on 24 Apr 2025.
-            var proposalId_ = options.Protocol switch
-            {
-                Protocol.ConvexCrv when epoch.Round == 95 => "0x3016b4856269e94064a8ddd5bd6d229a03f08471c011b6fa4ddbccd225b4e6aa",
-                Protocol.ConvexCrv when epoch.Round == 110 => "0x40a7f783fb51632162a16ae65a10f142547e25eb660f37060ca242f4c68df7cd",
-                Protocol.ConvexCrv when epoch.Round == 121 => "0xda3349d575981a16774bc9308ba4202938e2c839899ff53a94725121e285aece",
-                Protocol.ConvexFxn when epoch.Round == 110 => "0x33f4e770e566dc8c5e47d9b3b0385ec0816fa9f999f9751d915c171a3176b265",
-                Protocol.ConvexFxn when epoch.Round == 56 => "0x138df822ddbf89129e229e52d99ce73fc2527a952c80502628552a258dd7c91c",
-                _ => options.ProposalIds
-                    .Find(x => Regex.IsMatch(x.Value.Title, titleRegex))
-                    .Map(x => x.Key)
-                    .ToEitherAsync(Error.New($"Failed to find id for proposal {titleRegex}"))
-            };
-
-            var proposal_ = proposalId_.Bind(options.BribesFunctions.GetProposal);
-
-            var bribes_ = proposal_.Bind(proposal =>
-            {
-                var bribes = epoch.Bribes.ToList();
-                return bribes
-                    // Process each bribe.
-                    .Map(par(
-                        ProcessBribe,
-                        logger,
-                        web3,
-                        new ProcessBribeOptions(proposal.Choices),
-                        options.Gauges,
-                        par(getPrice, proposal.End)))
-                    // Transform the list of tasks to a task of a list.
-                    .SequenceSerial()
-                    // Filter out problematic bribes.
-                    .Map(bs => bs
-                       .Where(bribe => bribe.Choice != -1))
-                    .Map(toList);
-            });
-
-            var bribeChoices_ =
-                from proposal in proposal_
-                from bribes in bribes_
-                select bribes
-                    .Distinct()
-                    .Map(bribe => (
-                        Pool: proposal.Choices[bribe.Choice],
-                        // We need to undo the Snapshot index offset.
-                        Choice: (bribe.Choice + 1).ToString()))
-                    .toList();
-
-            var votes_ = proposal_.Bind(proposal => options
-                .BribesFunctions
-                .GetVotes(proposal.Id));
-
-            var snapshot_ = proposal_.MapTry(proposal => BigInteger.Parse(proposal.Snapshot));
-
-            var scores_ = (
-                from votes in votes_
-                from snapshot in snapshot_
-                select options.BribesFunctions.GetScores(
-                    votes.Map(vote => Address.Of(vote.Voter)).Somes().toList(),
-                    snapshot))
-                .Bind(x => x);
-
-            var votesPools_ =
-                from proposalId in proposalId_
-                from votes in votes_
-                from scores in scores_
-                from bribeChoices in bribeChoices_
-                select votes
-                    .Aggregate(
-                        Map<string, double>(),
-                        (acc, vote) =>
-                        {
-                            var voteTotal = vote.Choices.Values.Sum();
-
-                            // It's possible people vote on 'nothing' through Snapshot.
-                            if (voteTotal == 0) return acc;
-
-                            var voter = Address.Of(vote.Voter);
-                            var voteWeight = scores.Find(voter).ValueUnsafe();
-
-                            // Only bother with choices that can be bribed.
-                            var choices = vote.Choices
-                                .Map(x => bribeChoices
-                                    .Find(b => b.Choice == x.Key)
-                                    .Map(y => (y.Pool, Score: x.Value)))
-                                .Somes();
-
-                            foreach (var choice in choices)
-                            {
-                                var scoreNormalized = choice.Score / voteTotal;
-                                var scoreWeighted = voteWeight * scoreNormalized;
-                                acc = acc.AddOrUpdate(choice.Pool, x => x + scoreWeighted, scoreWeighted);
-                            }
-
-                            return acc;
-                        });
-
-            return from proposal in proposal_
-                   from bribes in bribes_
-                   from votesPools in votesPools_
-                   select new Db.Bribes.EpochV2
-                   {
-                       Platform = Platform.Votium.ToPlatformString(),
-                       Protocol = options.Protocol.ToProtocolString(),
-                       Round = publicRound,
-                       SourceRound = epoch.Round,
-                       End = proposal.End,
-                       Proposal = proposal.Id,
-                       VoteSource = "snapshot",
-                       Bribed = votesPools.ToDictionary(),
-                       Bribes = bribes.ToList(),
-                       ScoresTotal = proposal.ScoresTotal
-                   };
+            return ProcessOnchainEpoch(logger, web3, options, getPrice);
         });
 
     private static bool IsOnchainRound(

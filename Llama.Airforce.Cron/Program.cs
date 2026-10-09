@@ -20,6 +20,23 @@ var configuration = new ConfigurationBuilder()
    .AddEnvironmentVariables()
    .Build();
 
+var onchainCrv = BribesV2Factory.OnchainVotingOptions.FromStrings(
+    configuration["CONVEX_ONCHAIN_CVX_CRV_CUTOVER_ROUND"],
+    configuration["CONVEX_ONCHAIN_CVX_CRV_FIRST_PROPOSAL_ID"])!;
+var onchainFxn = BribesV2Factory.OnchainVotingOptions.FromStrings(
+    configuration["CONVEX_ONCHAIN_CVX_FXN_CUTOVER_ROUND"],
+    configuration["CONVEX_ONCHAIN_CVX_FXN_FIRST_PROPOSAL_ID"])!;
+
+foreach (var (protocol, options) in new[]
+{
+    (Protocol.ConvexCrv, onchainCrv),
+    (Protocol.ConvexFxn, onchainFxn)
+})
+{
+    if (options is null || options.CutoverRound <= 0 || options.FirstProposalId < 0)
+        throw new InvalidOperationException($"Invalid on-chain voting options for {protocol}: a positive cutover round and a non-negative first proposal ID are required");
+}
+
 // Set up dependency injection
 var alchemy = configuration["ALCHEMY"];
 var web3ETH = new Web3(alchemy);
@@ -45,12 +62,6 @@ logger.LogInformation("Cronjobs starting...");
 
 var graphApiKey = configuration["GRAPH_API_KEY"];
 var liveEpochCheck = configuration.GetValue<bool>("LIVE_EPOCH_CHECK");
-var onchainCrv = BribesV2Factory.OnchainVotingOptions.FromStrings(
-    configuration["CONVEX_ONCHAIN_CVX_CRV_CUTOVER_ROUND"],
-    configuration["CONVEX_ONCHAIN_CVX_CRV_FIRST_PROPOSAL_ID"]);
-var onchainFxn = BribesV2Factory.OnchainVotingOptions.FromStrings(
-    configuration["CONVEX_ONCHAIN_CVX_FXN_CUTOVER_ROUND"],
-    configuration["CONVEX_ONCHAIN_CVX_FXN_FIRST_PROPOSAL_ID"]);
 if (!liveEpochCheck)
 {
     logger.LogInformation("Skipping live epoch check");
