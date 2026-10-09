@@ -31,7 +31,6 @@ public class BribeFactoryTests
 
     [Test]
     [TestCase(Platform.Votium, Protocol.ConvexCrv, 275218.498948121, 4073133.7953767194, 7405670.9515354205)]
-    [TestCase(Platform.HiddenHand, Protocol.AuraBal, 5111.9299885981391, 326496.26531737653, 757590.84303675336)]
     public async Task ProcessEpoch(
         Platform platform,
         Protocol protocol,
@@ -43,7 +42,6 @@ public class BribeFactoryTests
         var alchemy = Configuration["ALCHEMY"];
         var web3 = new Web3(alchemy);
         HttpClient http() => new();
-        const int AURA_VERSION = 1;
         var logger = new LoggerFactory().CreateLogger("test");
         var getPrice = fun((Proposal proposal, Address tokenAddress, string token) =>
         {
@@ -63,7 +61,7 @@ public class BribeFactoryTests
         });
 
         // Act
-        var bribeFunctions = BribesFactory.GetBribesFunctions(platform, protocol, AURA_VERSION, http);
+        var bribeFunctions = BribesFactory.GetBribesFunctions(platform, protocol, http);
 
         var proposalIds = await bribeFunctions.GetProposalIds()
             .MatchAsync(x => x, _ => throw new Exception());

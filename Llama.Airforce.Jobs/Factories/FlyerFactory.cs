@@ -83,25 +83,4 @@ public static class FlyerFactory
                     CvxCrvApr = cvxCrvApr
                 };
         });
-
-    public static Func<
-            IWeb3,
-            Func<HttpClient>,
-            EitherAsync<Error, Db.Aura.Flyer>>
-        CreateFlyerAura = fun((
-            IWeb3 web3,
-            Func<HttpClient> httpFactory) =>
-        {
-            var auraBalApr_ = Aura.GetAuraBalApr(httpFactory, web3).Map(x => x * 100);
-            var auraBalPrice_ = PriceFunctions.GetAuraBalPrice(httpFactory, web3);
-
-            return
-                from auraBalApr in auraBalApr_
-                from auraBalPrice in auraBalPrice_
-                select new Db.Aura.Flyer
-                {
-                    AuraBalPrice = auraBalPrice,
-                    AuraBalApr = auraBalApr
-                };
-        });
 }

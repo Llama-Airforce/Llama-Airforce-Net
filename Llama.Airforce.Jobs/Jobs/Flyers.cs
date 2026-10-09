@@ -38,31 +38,4 @@ public class Flyers
                     logger.LogError($"Failed to update Convex flyer: {ex}");
                     return Unit.Default;
                 }));
-
-    public static Func<
-            ILogger,
-            DashboardContext,
-            IWeb3,
-            Func<HttpClient>,
-            Task>
-        UpdateFlyerAura = fun((
-            ILogger logger,
-            DashboardContext context,
-            IWeb3 web3,
-            Func<HttpClient> httpFactory) =>
-        FlyerFactory
-            .CreateFlyerAura(web3, httpFactory)
-            .MatchAsync(
-                RightAsync: async f =>
-                {
-                    await context.UpsertAsync(f);
-                    logger.LogInformation("Updated Aura flyer");
-
-                    return Unit.Default;
-                },
-                Left: ex =>
-                {
-                    logger.LogError($"Failed to update Aura flyer: {ex}");
-                    return Unit.Default;
-                }));
 }

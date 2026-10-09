@@ -69,40 +69,6 @@ public static class Addresses
         public static Address eCFXETH = Address.Of("0x5ac4fcee123dcadfae22bc814c4cc72b96c93f38");
     }
 
-    public static class HiddenHand
-    {
-        public static Address AuraBribeVault = Address.Of("0x9ddb2da7dd76612e0df237b89af2cf4413733212");
-    }
-
-    public static class Balancer
-    {
-        public static Address Token = Address.Of("0xba100000625a3754423978a60c9317c58a424e3D");
-        public static Address TokenAdmin = Address.Of("0xf302f9F50958c5593770FDf4d4812309fF77414f");
-        public static Address BBAUSDToken = Address.Of("0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2");
-
-        public static Address GaugeController = Address.Of("0xC128468b7Ce63eA702C1f104D55A2566b13D3ABD");
-        public static Address VotingEscrow = Address.Of("0xC128a9954e6c874eA3d62ce62B468bA073093F25");
-
-        public static Address Vault = Address.Of("0xba12222222228d8ba445958a75a0704d566bf2c8");
-        public static Address BPT = Address.Of("0x5c6Ee304399DBdB9C8Ef030aB642B10820DB8F56");
-    }
-
-    public static class AuraBal
-    {
-        public static Address Token = Address.Of("0x616e8bfa43f920657b3497dbf40d6b1a02d4608d");
-    }
-
-    public static class Aura
-    {
-        public static Address Token = Address.Of("0xC0c293ce456fF0ED870ADd98a0828Dd4d2903DBF");
-        public static Address Locked = Address.Of("0x3Fa73f1E5d8A792C80F426fc8F84FBF7Ce9bBCAC");
-
-        public static Address BalStaked = Address.Of("0x00A7BA8Ae7bca0B10A32Ea1f8e2a1Da980c6CAd2"); // auraBAL
-        public static Address BBAUSDStaked = Address.Of("0xfd176ba656b91f0ce8c59ad5c3245bebb99cd69a");
-
-        public static Address VoterProxy = Address.Of("0xaF52695E1bB01A16D33D7194C28C42b10e0Dbec2");
-    }
-
     public static class UniV3Pools
     {
         public static Address TXJPWETH = Address.Of("0xa9166690c35d900a57d2ec132c58291bc0678944");

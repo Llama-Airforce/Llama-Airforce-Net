@@ -4,8 +4,7 @@ public enum Protocol
 {
     ConvexCrv,
     ConvexPrisma,
-    ConvexFxn,
-    AuraBal
+    ConvexFxn
 }
 
 public static class ProtocolExt
@@ -15,7 +14,6 @@ public static class ProtocolExt
         Protocol.ConvexCrv => "cvx-crv",
         Protocol.ConvexPrisma => "cvx-prisma",
         Protocol.ConvexFxn => "cvx-fxn",
-        Protocol.AuraBal => "aura-bal",
         _ => "unknown-protocol"
     };
 }

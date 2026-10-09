@@ -21,8 +21,7 @@ public static class BribesFactory
     public record OptionsGetBribes(
         Platform Platform,
         Protocol Protocol,
-        bool LastEpochOnly,
-        int AuraVersion);
+        bool LastEpochOnly);
 
     public record BribesFunctions(
         Func<EitherAsync<Error, Map<string, (int, string)>>> GetProposalIds,
@@ -37,7 +36,6 @@ public static class BribesFactory
     public static BribesFunctions GetBribesFunctions(
         Platform platform,
         Protocol protocol,
-        int auraVersion,
         Func<HttpClient> httpFactory) =>
         (platform, protocol) switch
         {
@@ -47,18 +45,6 @@ public static class BribesFactory
                 Subgraphs.Votium.GetEpochs.Par(httpFactory),
                 Snapshots.Snapshot.GetVotes.Par(httpFactory),
                 Snapshots.Convex.GetScores.Par(httpFactory)),
-
-            (Platform.HiddenHand, Protocol.AuraBal) => new BribesFunctions(
-                Snapshots.Aura.GetProposalIds.Par(httpFactory).Par(auraVersion),
-                Snapshots.Snapshot.GetProposal.Par(httpFactory),
-                fun(() => Snapshots.Aura.GetProposalIds(httpFactory, auraVersion)
-                    .Map(x => x
-                        .Values
-                        .OrderBy(proposal => proposal.Index)
-                        .ToList())
-                    .Bind(Subgraphs.HiddenHand.GetEpochs.Par(httpFactory).Par(auraVersion))),
-                Snapshots.Snapshot.GetVotes.Par(httpFactory),
-                Snapshots.Aura.GetScores.Par(httpFactory).Par(auraVersion)),
 
             _ => new BribesFunctions(
                 () => EitherAsync<Error, Map<string, (int, string)>>.Left(CreateError((platform, protocol))),
@@ -85,16 +71,10 @@ public static class BribesFactory
             var bribeFunctions = GetBribesFunctions(
                 options.Platform,
                 options.Protocol,
-                options.AuraVersion,
                 httpFactory);
 
             var proposalIds_ = bribeFunctions.GetProposalIds();
             var epochs_ = bribeFunctions.GetEpochs();
-
-            // Fix aura resetting their round indices back to 1 because they moved to a new snapshot space.
-            var indexOffset = 0;
-            if (options is { Protocol: Protocol.AuraBal, Platform: Platform.HiddenHand, AuraVersion: 2 })
-                indexOffset = 15;
 
             EitherAsync<Error, EitherAsync<Error, Lst<Db.Bribes.Epoch>>> dbEpochs;
             if (options.LastEpochOnly)
@@ -114,7 +94,7 @@ public static class BribesFactory
                                 options.Protocol,
                                 proposalIds,
                                 epoch,
-                            epochs.Count - 1 + indexOffset),
+                                epochs.Count - 1),
                             getPrice))
                         .SequenceSerial()
                         .Map(toList);
@@ -134,7 +114,7 @@ public static class BribesFactory
                                 options.Protocol,
                                 proposalIds,
                                 epoch,
-                                i + indexOffset),
+                                i),
                             getPrice))
                         .SequenceSerial()
                         .Map(toList);

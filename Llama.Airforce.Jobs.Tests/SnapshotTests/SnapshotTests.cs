@@ -25,21 +25,6 @@ public class SnapshotTests
     }
 
     [Test]
-    public async Task GetNumChoices()
-    {
-        // Arrange
-        var id = "0xabaf9275ae0533ce991059e8b5664225bf54bae81b9305ae60b48198db180ad9";
-        HttpClient http() => new();
-
-        // Act
-        var numChoices = await Snapshot.GetNumChoices(http, id)
-            .MatchAsync(x => x, _ => throw new System.Exception());
-
-        // Assert
-        Assert.AreEqual(79, numChoices);
-    }
-
-    [Test]
     public async Task GetVotes()
     {
         // Arrange

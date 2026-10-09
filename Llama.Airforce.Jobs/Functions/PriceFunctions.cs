@@ -208,38 +208,6 @@ public static class PriceFunctions
                 select price * priceOther;
         });
 
-    public static Func<
-            Func<HttpClient>,
-            IWeb3,
-            EitherAsync<Error, double>>
-        GetAuraBalPrice = fun((
-            Func<HttpClient> httpFactory,
-            IWeb3 web3) =>
-        {
-            var bal_ = GetPrice(httpFactory, Addresses.Balancer.Token, Network.Ethereum, Some(web3));
-            var weth_ = GetPrice(httpFactory, Addresses.ERC20.WETH, Network.Ethereum, Some(web3));
-            var totalSupply_ = Balancer.GetTotalSupplyBPT(web3).ToEitherAsync();
-            var poolTokens_ = Balancer
-                .GetPoolTokens(
-                    web3,
-                    "5c6ee304399dbdb9c8ef030ab642b10820db8f56000200000000000000000014")
-                .ToEitherAsync();
-
-            var bpt_ =
-                from bal in bal_
-                from weth in weth_
-                from totalSupply in totalSupply_
-                from poolTokens in poolTokens_
-                select (bal * poolTokens.Balances[0].DivideByDecimals(18) + weth * poolTokens.Balances[1].DivideByDecimals(18)) / totalSupply.DivideByDecimals(18);
-
-            var discount_ = Balancer.GetDiscountAuraBal(web3).ToEitherAsync();
-
-            return
-                from bpt in bpt_
-                from discount in discount_
-                select bpt * discount;
-        });
-
     /// <summary>
     /// Returns the current price in dollars for a token by looking at its ETH Curve V2 LP.
     /// </summary>

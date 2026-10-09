@@ -2,8 +2,7 @@
 
 public enum Platform
 {
-    Votium,
-    HiddenHand
+    Votium
 }
 
 public static class PlatformExt
@@ -11,7 +10,6 @@ public static class PlatformExt
     public static string ToPlatformString(this Platform platform) => platform switch
     {
         Platform.Votium => "votium",
-        Platform.HiddenHand => "hh",
         _ => "unknown-platform"
     };
 }

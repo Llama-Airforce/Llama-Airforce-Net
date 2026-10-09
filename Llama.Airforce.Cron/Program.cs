@@ -136,18 +136,12 @@ await Llama.Airforce.Jobs.Jobs.Dashboards.UpdateDashboards(
     dashboardContext,
     data);
 
-// Update flyers
+// Update the Convex flyer.
 await Llama.Airforce.Jobs.Jobs.Flyers.UpdateFlyerConvex(
     logger,
     dashboardContext,
     web3ETH,
     httpFactory.CreateClient,
     List(latestFinishedEpochVotium));
-
-await Llama.Airforce.Jobs.Jobs.Flyers.UpdateFlyerAura(
-    logger,
-    dashboardContext,
-    web3ETH,
-    httpFactory.CreateClient);
 
 logger.LogInformation("Cronjobs done");

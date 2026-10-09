@@ -53,20 +53,4 @@ public class PriceTests
         // Assert
         Assert.IsTrue(price > 0.01);
     }
-
-    [Test]
-    public async Task GetPriceAuraBal()
-    {
-        // Arrange
-        var alchemy = Configuration["ALCHEMY"];
-        var web3 = new Web3(alchemy);
-        HttpClient http() => new();
-
-        // Act
-        var price = await PriceFunctions.GetAuraBalPrice(http, web3)
-            .MatchAsync(x => x, _ => throw new System.Exception());
-
-        // Assert
-        Assert.IsTrue(price > 0.01);
-    }
 }

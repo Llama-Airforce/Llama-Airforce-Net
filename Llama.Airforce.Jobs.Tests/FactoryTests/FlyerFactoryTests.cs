@@ -41,19 +41,4 @@ public class FlyerFactoryTests
         // Assert
         Assert.IsTrue(await flyer.IsRight);
     }
-
-    [Test]
-    public async Task CreateAuraFlyer()
-    {
-        // Arrange
-        var alchemy = Configuration["ALCHEMY"];
-        var web3 = new Web3(alchemy);
-        HttpClient http() => new();
-
-        // Act
-        var flyer = FlyerFactory.CreateFlyerAura(web3, http);
-
-        // Assert
-        Assert.IsTrue(await flyer.IsRight);
-    }
 }
