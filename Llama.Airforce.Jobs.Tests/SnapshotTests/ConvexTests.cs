@@ -12,20 +12,6 @@ namespace Llama.Airforce.Jobs.Tests.SnapshotTests;
 public class ConvexTests
 {
     [Test]
-    public async Task GetProposalIds()
-    {
-        // Arrange
-        HttpClient http() => new();
-
-        // Act
-        var data = await Convex.GetProposalIds(http)
-            .MatchAsync(x => x, _ => throw new System.Exception());
-
-        // Assert
-        Assert.IsTrue(data.Count > 10);
-    }
-
-    [Test]
     public async Task GetScores()
     {
         // Arrange

@@ -6,7 +6,6 @@ using Llama.Airforce.Jobs.Contracts;
 using Llama.Airforce.Jobs.Snapshots.Models;
 using Llama.Airforce.SeedWork.Extensions;
 using Llama.Airforce.SeedWork.Types;
-using Nethereum.Util;
 using Newtonsoft.Json;
 using static LanguageExt.Prelude;
 
@@ -16,19 +15,6 @@ public class Convex
 {
     public const string SPACE_CVX = "cvx.eth";
     public const string SNAPSHOT_SCORE_URL = "https://score.snapshot.org/api/scores";
-
-    public static Func<
-            Func<HttpClient>,
-            EitherAsync<Error, Map<string, (int Index, string Id)>>>
-        GetProposalIds = fun((Func<HttpClient> httpFactory) => Snapshot.GetProposalIds
-            .Par(httpFactory)
-            .Par(SPACE_CVX)
-            .Par(None)
-            .Par(_ => true)
-            .Par(proposal => (proposal.Id.StartsWith("0x")
-                    ? new Sha3Keccack().CalculateHashFromHex(proposal.Id)
-                    : new Sha3Keccack().CalculateHash(proposal.Id))
-                .Insert(0, "0x"))());
 
     // Key is proposalId
     public static Func<

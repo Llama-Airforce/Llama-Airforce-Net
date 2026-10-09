@@ -29,11 +29,6 @@ public class EpochId : ValueObject
             protocol,
             round);
 
-    public static implicit operator EpochId(Epoch epoch) => new(
-        StringMax.Of(epoch.Platform),
-        StringMax.Of(epoch.Protocol),
-        epoch.Round);
-
     public static implicit operator EpochId(EpochV2 epoch) => new(
         StringMax.Of(epoch.Platform),
         StringMax.Of(epoch.Protocol),

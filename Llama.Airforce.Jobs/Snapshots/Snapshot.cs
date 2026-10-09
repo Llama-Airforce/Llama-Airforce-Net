@@ -34,8 +34,8 @@ public static class Snapshot
             })));
 
     /// <summary>
-    /// Returns a mapping of proposals data from The Graph for a specific space.
-    /// The key is the original proposal id, the value is the hash used by the bribes platform.
+    /// Returns a mapping of proposal data from Snapshot for a specific space.
+    /// The key is the proposal id; the value contains its index and the value selected by the caller.
     /// </summary>
     public static Func<
             Func<HttpClient>,

@@ -40,12 +40,6 @@ public class BribesContext
         }
     }
 
-    public async Task UpsertAsync(Epoch epoch)
-    {
-        epoch.Id = (EpochId)epoch;
-        await Container.UpsertItemAsync(epoch, new PartitionKey((EpochId)epoch));
-    }
-
     public static async Task<BribesContext> Create(
         string endpointUri,
         string primaryKey,
