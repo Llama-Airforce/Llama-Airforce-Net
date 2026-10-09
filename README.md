@@ -10,7 +10,7 @@
 
 # Llama Airforce .NET
 
-This repository contains the public .NET back-end of the [Llama Airforce](https://llama.airforce) website. It includes an API server, Azure Functions with its corresponding analytical code and more. The primary goal of this repository is to be open and transparant about our methods, and to give people the opportunity to contribute.
+This repository contains the public .NET back-end of the [Llama Airforce](https://llama.airforce) website. It includes Azure Functions, a cron runner, and their analytical code. The primary goal of this repository is to be open and transparant about our methods, and to give people the opportunity to contribute.
 
 The back-end makes use of the following technologies, frameworks and libraries:
 
@@ -32,7 +32,6 @@ dotnet test --no-build --verbosity normal
 
 | Project                    | Description                                                                                                                                                                                                                                                                                          |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Llama.Airforce.API`       | The primary API server found at https://api.llama.airforce for use in conjunction with our front-end website.                                                                                                                                                                                        |
 | `Llama.Airforce.Functions` | The various worker jobs we have running that keep our database up-to-date with the latest data and analytics, including the various bribe rounds. This project mainly contains the Azure Functions themselves and acts as a facade of the actual logic, which can be found in `Llama.Airforce.Jobs`. |
 | `Llama.Airforce.Jobs`      | This project contains the analytical logic used by the Azure Functions in `Llama.Airforce.Functions`                                                                                                                                                                                                 |
 | `Llama.Airforce.Database`  | The gateway to our database, self-explanatory.                                                                                                                                                                                                                                                       |
