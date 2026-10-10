@@ -40,21 +40,10 @@ public class BribesV2
                 time = customTime.IfNone(time);
 
                 var network = PriceFunctions.GetNetwork(token);
-                var priceAtTime = PriceFunctions.GetPriceExt(
-                    httpFactory,
-                    tokenAddress,
-                    network,
-                    Some(web3),
-                    time,
-                    token);
+                var priceAtTime = PriceFunctions.GetPriceExt(httpFactory, tokenAddress, network, Some(web3), time, token);
 
-                var price = priceAtTime
-                    // If the price fails for a given time, use spot price.
-                    .BindLeft(ex => PriceFunctions.GetPrice(
-                        httpFactory,
-                        tokenAddress,
-                        network,
-                        Some(web3)));
+                // If the price fails for a given time, use spot price.
+                var price = priceAtTime.BindLeft(ex => PriceFunctions.GetPrice(httpFactory, tokenAddress, network, Some(web3)));
 
                 return price;
             });

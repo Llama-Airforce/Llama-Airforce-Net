@@ -18,22 +18,15 @@ var configuration = new ConfigurationBuilder()
    .AddEnvironmentVariables()
    .Build();
 
-var onchainCrv = BribesV2Factory.OnchainVotingOptions.FromStrings(
+var graphApiKey = configuration["GRAPH_API_KEY"];
+var optionsCrv = BribesV2Factory.OptionsGetBribes.FromStrings(
+    Protocol.ConvexCrv, true, graphApiKey,
     configuration["CONVEX_ONCHAIN_CVX_CRV_CUTOVER_ROUND"],
-    configuration["CONVEX_ONCHAIN_CVX_CRV_FIRST_PROPOSAL_ID"])!;
-var onchainFxn = BribesV2Factory.OnchainVotingOptions.FromStrings(
+    configuration["CONVEX_ONCHAIN_CVX_CRV_FIRST_PROPOSAL_ID"]);
+var optionsFxn = BribesV2Factory.OptionsGetBribes.FromStrings(
+    Protocol.ConvexFxn, true, graphApiKey,
     configuration["CONVEX_ONCHAIN_CVX_FXN_CUTOVER_ROUND"],
-    configuration["CONVEX_ONCHAIN_CVX_FXN_FIRST_PROPOSAL_ID"])!;
-
-foreach (var (protocol, options) in new[]
-{
-    (Protocol.ConvexCrv, onchainCrv),
-    (Protocol.ConvexFxn, onchainFxn)
-})
-{
-    if (options is null || options.CutoverRound <= 0 || options.FirstProposalId < 0)
-        throw new InvalidOperationException($"Invalid on-chain voting options for {protocol}: a positive cutover round and a non-negative first proposal ID are required");
-}
+    configuration["CONVEX_ONCHAIN_CVX_FXN_FIRST_PROPOSAL_ID"]);
 
 // Set up dependency injection
 var alchemy = configuration["ALCHEMY"];
@@ -57,7 +50,6 @@ var dashboardContext = serviceProvider.GetService<DashboardContext>();
 
 logger.LogInformation("Cronjobs starting...");
 
-var graphApiKey = configuration["GRAPH_API_KEY"];
 var liveEpochCheck = configuration.GetValue<bool>("LIVE_EPOCH_CHECK");
 if (!liveEpochCheck)
 {
@@ -75,81 +67,42 @@ if (DateTime.UtcNow > epochEnd && liveEpochCheck)
 else
 {
     // Update f(x) Protocol bribes.
-    await Llama.Airforce.Jobs.Jobs.BribesV2.UpdateBribes(
-        logger,
-        bribesV2Context,
-        httpFactory.CreateClient,
-        web3ETH,
-        new BribesV2Factory.OptionsGetBribes(Protocol.ConvexFxn, true, graphApiKey, onchainFxn),
-        None);
+    await Llama.Airforce.Jobs.Jobs.BribesV2.UpdateBribes(logger, bribesV2Context, httpFactory.CreateClient, web3ETH, optionsFxn, None);
 
     // Update Convex bribes.
-    await Llama.Airforce.Jobs.Jobs.BribesV2.UpdateBribes(
-        logger,
-        bribesV2Context,
-        httpFactory.CreateClient,
-        web3ETH,
-        new BribesV2Factory.OptionsGetBribes(Protocol.ConvexCrv, true, graphApiKey, onchainCrv),
-        None);
+    await Llama.Airforce.Jobs.Jobs.BribesV2.UpdateBribes(logger, bribesV2Context, httpFactory.CreateClient, web3ETH, optionsCrv, None);
 }
 
 // Get Votium data.
 var epochsVotiumV1 = await bribesContext
-    .GetAllAsync(
-        Platform.Votium.ToPlatformString(),
-        Protocol.ConvexCrv.ToProtocolString())
+    .GetAllAsync(Platform.Votium.ToPlatformString(), Protocol.ConvexCrv.ToProtocolString())
     .Map(toList);
 
 var epochsVotiumV2 = await bribesV2Context
-   .GetAllAsync(
-        Platform.Votium.ToPlatformString(),
-        Protocol.ConvexCrv.ToProtocolString())
+   .GetAllAsync(Platform.Votium.ToPlatformString(), Protocol.ConvexCrv.ToProtocolString())
    .Map(toList);
 
 var latestFinishedEpochVotium = epochsVotiumV2
     .OrderBy(epoch => DashboardFactory.GetFinishedEnd(epoch))
     .Last(epoch => DashboardFactory.GetFinishedEnd(epoch) <= DateTime.UtcNow.ToUnixTimeSeconds());
 
-var votiumDataV1 = new DashboardFactory.VotiumDataV1(
-    epochsVotiumV1);
-
-var votiumDataV2 = new DashboardFactory.VotiumDataV2(
-    epochsVotiumV2,
-    latestFinishedEpochVotium);
+var votiumDataV1 = new DashboardFactory.VotiumDataV1(epochsVotiumV1);
+var votiumDataV2 = new DashboardFactory.VotiumDataV2(epochsVotiumV2, latestFinishedEpochVotium);
 
 // Get f(x) Protocol data.
 var epochsFxn = await bribesV2Context
-   .GetAllAsync(
-        Platform.Votium.ToPlatformString(),
-        Protocol.ConvexFxn.ToProtocolString())
+   .GetAllAsync(Platform.Votium.ToPlatformString(), Protocol.ConvexFxn.ToProtocolString())
    .Map(toList);
 
 var latestFinishedEpochFxn = epochsFxn
    .OrderBy(epoch => DashboardFactory.GetFinishedEnd(epoch))
    .Last(epoch => DashboardFactory.GetFinishedEnd(epoch) <= DateTime.UtcNow.ToUnixTimeSeconds());
 
-var fxnData = new DashboardFactory.FxnData(
-    epochsFxn,
-    latestFinishedEpochFxn);
+var fxnData = new DashboardFactory.FxnData(epochsFxn, latestFinishedEpochFxn);
+var data = new DashboardFactory.Data(votiumDataV1, votiumDataV2, fxnData);
 
-var data = new DashboardFactory.Data(
-    votiumDataV1,
-    votiumDataV2,
-    fxnData);
-
-await Llama.Airforce.Jobs.Jobs.Dashboards.UpdateDashboards(
-    logger,
-    web3ETH,
-    httpFactory.CreateClient,
-    dashboardContext,
-    data);
-
+await Llama.Airforce.Jobs.Jobs.Dashboards.UpdateDashboards(logger, web3ETH, httpFactory.CreateClient, dashboardContext, data);
 // Update the Convex flyer.
-await Llama.Airforce.Jobs.Jobs.Flyers.UpdateFlyerConvex(
-    logger,
-    dashboardContext,
-    web3ETH,
-    httpFactory.CreateClient,
-    List(latestFinishedEpochVotium));
+await Llama.Airforce.Jobs.Jobs.Flyers.UpdateFlyerConvex(logger, dashboardContext, web3ETH, httpFactory.CreateClient, List(latestFinishedEpochVotium));
 
 logger.LogInformation("Cronjobs done");
