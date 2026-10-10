@@ -18,9 +18,5 @@ public sealed class Currency : StringMax
             ? Some(new Currency(value.ToLower()))
             : None;
 
-    public new static bool IsValid(string value) => StringMax.IsValid(value);
-
-    public override string ToString() => this.Value;
-
     public static implicit operator Currency(Option<Currency> x) => x.ValueUnsafe();
 }

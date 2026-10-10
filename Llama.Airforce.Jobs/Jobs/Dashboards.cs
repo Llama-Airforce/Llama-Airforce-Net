@@ -3,25 +3,17 @@ using Llama.Airforce.Database.Contexts;
 using Llama.Airforce.Jobs.Factories;
 using Microsoft.Extensions.Logging;
 using Nethereum.Web3;
-using static LanguageExt.Prelude;
 
 namespace Llama.Airforce.Jobs.Jobs;
 
 public class Dashboards
 {
-    public static Func<
-            ILogger,
-            IWeb3,
-            Func<HttpClient>,
-            DashboardContext,
-            DashboardFactory.Data,
-            Task>
-        UpdateDashboards = fun((
-            ILogger logger,
-            IWeb3 web3,
-            Func<HttpClient> httpFactory,
-            DashboardContext context,
-            DashboardFactory.Data data) =>
+    public static Task UpdateDashboards(
+        ILogger logger,
+        IWeb3 web3,
+        Func<HttpClient> httpFactory,
+        DashboardContext context,
+        DashboardFactory.Data data) =>
         DashboardFactory
             .CreateDashboards(web3, httpFactory, data)
             .MatchAsync(
@@ -39,5 +31,5 @@ public class Dashboards
                 {
                     logger.LogError($"Failed to update dashboard: {ex}");
                     return Unit.Default;
-                }));
+                });
 }

@@ -37,18 +37,10 @@ public static class PriceFunctions
             "USDM" => SomeAsync(1.0),
             "BB-A-USD" => SomeAsync(1.0),
             "pmUSD" => SomeAsync(1.0),
-            "T" => web3.Match(
-                w => GetCurveV2Price(httpFactory, w, Addresses.ERC20.T, None).ToOption(),
-                () => None),
-            "eCFX" => web3.Match(
-                w => GetCurveV2Price(httpFactory, w, Addresses.ERC20.eCFX, None).ToOption(),
-                () => None),
-            "sdFXS" => web3.Match(
-                w => GetCurveV1Price(httpFactory, w, Addresses.ERC20.sdFXS, Addresses.ERC20.FXS, true).ToOption(),
-                () => None),
-            "TXJP" => web3.Match(
-                w => GetTXJPPrice(httpFactory, w, None).ToOption(),
-                () => None),
+            "T" => web3.Match(w => GetCurveV2Price(httpFactory, w, Addresses.ERC20.T, None).ToOption(), () => None),
+            "eCFX" => web3.Match(w => GetCurveV2Price(httpFactory, w, Addresses.ERC20.eCFX, None).ToOption(), () => None),
+            "sdFXS" => web3.Match(w => GetCurveV1Price(httpFactory, w, Addresses.ERC20.sdFXS, Addresses.ERC20.FXS, true).ToOption(), () => None),
+            "TXJP" => web3.Match(w => GetTXJPPrice(httpFactory, w, None).ToOption(), () => None),
             _ => None
         });
 
@@ -108,16 +100,11 @@ public static class PriceFunctions
                 .BindLeft(ex => CoinGecko.GetPriceAtTime(httpFactory, address, network, Currency.Usd, date_))
                 // Try different address if fetching fails.
                 .BindLeft(ex => fallback(ex).Bind(fb => CoinGecko
-                    .GetPriceAtTime(
-                        httpFactory,
-                        fb,
-                        network,
-                        Currency.Usd,
-                        date_)))
+                    .GetPriceAtTime(httpFactory, fb, network, Currency.Usd, date_)))
                 // Last ditch effort to look at hardcoded price fallback values.
                 .BindLeft(ex => token
                     .ToAsync()
-                    .Bind(par(Fallback.Par(httpFactory), web3))
+                    .Bind(symbol => Fallback(httpFactory, web3, symbol))
                     .ToEither(Error.New($"Could not find fallback dollar value for {address}\n" + ex.Message, ex)));
         });
 
@@ -133,7 +120,7 @@ public static class PriceFunctions
             Network network,
             Option<IWeb3> web3) => GetPriceExt(httpFactory, address, network, web3, None, None));
 
-        /// <summary>
+    /// <summary>
     /// Returns the current price in dollars for a token by looking at its ETH Curve V2 LP.
     /// </summary>
     public static Func<
@@ -150,14 +137,7 @@ public static class PriceFunctions
             Option<Address> tokenOther,
             bool flip) =>
         {
-            var priceOther_ = GetPriceExt(
-                httpFactory,
-                tokenOther.IfNone(Addresses.ERC20.WETH),
-                Network.Ethereum,
-                Some(web3),
-                None,
-                None);
-
+            var priceOther_ = GetPriceExt(httpFactory, tokenOther.IfNone(Addresses.ERC20.WETH), Network.Ethereum, Some(web3), None, None);
             var lpToken_ = CurveV1LpAddress(token).ToEitherAsync(Error.New($"No Curve V1 LP found for {token}"));
             var discount_ = lpToken_.Bind(x => Curve.GetDiscountV1(web3, x, flip).ToEitherAsync());
 
@@ -182,25 +162,14 @@ public static class PriceFunctions
             Address token,
             Option<Address> tokenOther) =>
         {
-            var priceOther_ = GetPriceExt(
-                httpFactory,
-                tokenOther.IfNone(Addresses.ERC20.WETH),
-                Network.Ethereum,
-                Some(web3),
-                None,
-                None);
-
+            var priceOther_ = GetPriceExt(httpFactory, tokenOther.IfNone(Addresses.ERC20.WETH), Network.Ethereum, Some(web3), None, None);
             var decimals_ = ERC20.GetDecimals(web3, token).ToEitherAsync();
             var lpToken_ = CurveV2LpAddress(token).ToEitherAsync(Error.New($"No Curve V2 LP found for {token}"));
 
             var price_ = (
                     from lpToken in lpToken_
                     from decimals in decimals_
-                    select Curve
-                        .GetPriceOracle(web3, lpToken)
-                        .DivideByDecimals(decimals)
-                        .ToEitherAsync())
-                .Bind(x => x);
+                    select Curve.GetPriceOracle(web3, lpToken).DivideByDecimals(decimals).ToEitherAsync()).Bind(x => x);
 
             return
                 from price in price_
@@ -221,14 +190,7 @@ public static class PriceFunctions
             IWeb3 web3,
             Option<Address> tokenOther) =>
         {
-            var priceOther_ = GetPriceExt(
-                httpFactory,
-                tokenOther.IfNone(Addresses.ERC20.WETH),
-                Network.Ethereum,
-                Some(web3),
-                None,
-                None);
-
+            var priceOther_ = GetPriceExt(httpFactory, tokenOther.IfNone(Addresses.ERC20.WETH), Network.Ethereum, Some(web3), None, None);
             var slot0_ = UniV3.GetSlot0(web3, Addresses.UniV3Pools.TXJPWETH).ToEitherAsync();
 
             var price_ =

@@ -44,7 +44,6 @@ public static class FxnApi
                .MapTry(JsonConvert.DeserializeObject<RequestGauges>)
                .MapTry(x => x.Data
                    .Values
-                   .Select(gauge => (gauge.Name, gauge.Gauge, gauge.Type))
                    .Aggregate(Map<string, string>(), (
                         acc,
                         kv) =>

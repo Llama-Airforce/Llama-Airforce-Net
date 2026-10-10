@@ -1,6 +1,7 @@
 ﻿using LanguageExt;
 using LanguageExt.Common;
 using Llama.Airforce.Jobs.Extensions;
+using Llama.Airforce.Jobs.Functions;
 using Llama.Airforce.Jobs.Subgraphs.Models;
 using Llama.Airforce.SeedWork.Extensions;
 using Newtonsoft.Json;
@@ -67,7 +68,7 @@ rounds(
                 _ => throw new ArgumentOutOfRangeException("Unsupported protocol")
             };
 
-            return Subgraph.GetData(httpFactory, url, Query)
+            return HttpFunctions.PostData(httpFactory, url, JsonConvert.SerializeObject(new { query = Query }))
                .MapTry(JsonConvert.DeserializeObject<RequestEpochsVotiumV2>)
                .MapTry(data => toList(data
                    .Data

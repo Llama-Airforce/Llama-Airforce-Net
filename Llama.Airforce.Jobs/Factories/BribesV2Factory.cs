@@ -122,9 +122,7 @@ public static class BribesV2Factory
         var proposalId = options.ToProposalId(publicRound);
         var proposal_ =
             from platform in platform_
-            from proposal in ConvexOnchainGaugeVoting
-               .GetProposal(web3, platform, proposalId)
-               .ToEitherAsync()
+            from proposal in ConvexOnchainGaugeVoting.GetProposal(web3, platform, proposalId).ToEitherAsync()
             from expectedEpoch in Convex
                .FindEpochId(web3, Subgraphs.Votium.GetEpochDate(options.Protocol, epoch.Round).ToUnixTimeSeconds())
                .ToEitherAsync()
@@ -133,16 +131,17 @@ public static class BribesV2Factory
 
         var proposalEnd_ = proposal_.Map(proposal => (long)proposal.EndTime);
 
-        var bribes_ = proposalEnd_.Bind(proposalEnd => ProcessEpochBribes(logger, web3, epoch, gauges, par(getPrice, proposalEnd)));
-        var bribed_ = platform_.Bind(platform => bribes_
-           .Bind(bribes => GetBribedPools(web3, platform, proposalId, bribes)));
+        var bribes_ = proposalEnd_.Bind(proposalEnd => epoch.Bribes.ToList()
+           .Map(bribe => ProcessBribe(logger, web3, gauges, par(getPrice, proposalEnd), bribe))
+           .SequenceSerial()
+           .Map(bs => bs.Where(bribe => bribe.Choice != -1))
+           .Map(toList)
+        );
+        var bribed_ = platform_.Bind(platform => bribes_.Bind(bribes => GetBribedPools(web3, platform, proposalId, bribes)));
 
         var scoresTotal_ =
             from platform in platform_
-            from total in ConvexOnchainGaugeVoting
-               .VoteTotal(web3, platform, proposalId)
-               .Map(x => x.DivideByDecimals(18))
-               .ToEitherAsync()
+            from total in ConvexOnchainGaugeVoting.VoteTotal(web3, platform, proposalId).Map(x => x.DivideByDecimals(18)).ToEitherAsync()
             select total;
 
         return
@@ -187,22 +186,6 @@ public static class BribesV2Factory
         }
     }
 
-    private static EitherAsync<Error, Lst<Db.Bribes.BribeV2>> ProcessEpochBribes(
-        ILogger logger,
-        IWeb3 web3,
-        Dom.EpochV2 epoch,
-        Map<string, string> gauges,
-        Func<Address, string, EitherAsync<Error, double>> getPrice)
-    {
-        var bribes = epoch.Bribes.ToList();
-        return bribes
-           .Map(bribe => ProcessBribe(logger, web3, gauges, getPrice, bribe))
-           .SequenceSerial()
-           .Map(bs => bs
-              .Where(bribe => bribe.Choice != -1))
-           .Map(toList);
-    }
-
     private static EitherAsync<Error, Map<string, double>> GetBribedPools(
         IWeb3 web3,
         Address platform,
@@ -210,13 +193,10 @@ public static class BribesV2Factory
         Lst<Db.Bribes.BribeV2> bribes) =>
         bribes
            .DistinctBy(bribe => bribe.Gauge)
-           .Map(async bribe => new
-           {
+           .Map(async bribe => (
                bribe.Pool,
-               Score = await ConvexOnchainGaugeVoting.GaugeTotal(web3, platform, proposalId, bribe.Gauge).Map(x => x.DivideByDecimals(18))
-           })
+               Score: await ConvexOnchainGaugeVoting.GaugeTotal(web3, platform, proposalId, bribe.Gauge).Map(x => x.DivideByDecimals(18))))
            .SequenceSerial()
-           .Map(toList)
            .Map(gauges => gauges
                .Where(gauge => gauge.Score > 0)
                .Aggregate(

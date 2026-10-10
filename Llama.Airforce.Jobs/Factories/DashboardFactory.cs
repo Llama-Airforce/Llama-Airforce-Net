@@ -14,21 +14,10 @@ public static class DashboardFactory
 {
     public const long OnchainGaugeVotingOvertimeSeconds = 10 * 60;
 
-    public record VotiumDataV1(
-        Lst<Db.Bribes.Epoch> Epochs);
-
-    public record VotiumDataV2(
-        Lst<Db.Bribes.EpochV2> Epochs,
-        Db.Bribes.EpochV2 LatestFinishedEpoch);
-
-    public record FxnData(
-        Lst<Db.Bribes.EpochV2> Epochs,
-        Db.Bribes.EpochV2 LatestFinishedEpoch);
-
-    public record Data(
-        VotiumDataV1 VotiumDataV1,
-        VotiumDataV2 VotiumDataV2,
-        FxnData FxnData);
+    public record VotiumDataV1(Lst<Db.Bribes.Epoch> Epochs);
+    public record VotiumDataV2(Lst<Db.Bribes.EpochV2> Epochs, Db.Bribes.EpochV2 LatestFinishedEpoch);
+    public record FxnData(Lst<Db.Bribes.EpochV2> Epochs, Db.Bribes.EpochV2 LatestFinishedEpoch);
+    public record Data(VotiumDataV1 VotiumDataV1, VotiumDataV2 VotiumDataV2, FxnData FxnData);
 
     public static long GetFinishedEnd(Db.Bribes.EpochV2 epoch)
     {
@@ -39,141 +28,90 @@ public static class DashboardFactory
         return epoch.End + overtime;
     }
 
-    public static Func<
-            IWeb3,
-            Func<HttpClient>,
-            Data,
-            EitherAsync<Error, Lst<Database.Dashboard>>>
-        CreateDashboards = fun((
-            IWeb3 web3,
-            Func<HttpClient> httpFactory,
-            Data data) =>
-        {
-            var overviewVotium_ =
-                CreateOverviewVotium(
-                    web3,
-                    httpFactory,
-                    data.VotiumDataV1,
-                    data.VotiumDataV2)
-                .Map(x => (Database.Dashboard)x);
-
-            var overviewFxn_ =
-                CreateOverviewFxn(
-                        web3,
-                        httpFactory,
-                        data.FxnData)
-                   .Map(x => (Database.Dashboard)x);
-
-            return
-                from overviewVotium in overviewVotium_
-                from overviewFxn in overviewFxn_
-                select List(overviewVotium, overviewFxn);
-        });
-
-    public static Func<
-            IWeb3,
-            Func<HttpClient>,
-            VotiumDataV1,
-            VotiumDataV2,
-            EitherAsync<Error, Db.Bribes.Dashboards.Overview>>
-        CreateOverviewVotium = fun((
-            IWeb3 web3,
-            Func<HttpClient> httpFactory,
-            VotiumDataV1 dataV1,
-            VotiumDataV2 dataV2) =>
-        {
-            var totalBribes = dataV2.LatestFinishedEpoch.Bribes.Sum(bribe => bribe.AmountDollars);
-            var totalBribed = dataV2.LatestFinishedEpoch.Bribed.Sum(bribed => bribed.Value);
-            var dollarPerVlCvx = totalBribes / totalBribed;
-
-            var crvPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Curve.Token, Network.Ethereum, Some(web3));
-
-            var crvPerDay_ = Curve.GetRate(web3).DivideByDecimals(Convex.CurveDecimals).Map(x => x * 86400).ToEitherAsync();
-            var votingPower_ = Curve.GetVotingPower(web3, Addresses.Convex.VoterProxyCurve).ToEitherAsync();
-
-            var scoresTotal_ = dataV2.LatestFinishedEpoch.ScoresTotal > 0
-                ? RightAsync<Error, double>(dataV2.LatestFinishedEpoch.ScoresTotal)
-                : LeftAsync<Error, double>(Error.New("Total scores is zero"));
-
-            // https://docs.google.com/spreadsheets/d/1SCO33fU-4EglqD9h191c5z3curC3SqJP-yshA1MjVqE/edit#gid=0
-            var crvPerCvxPerRound_ =
-                from crvPerDay in crvPerDay_
-                from votingPower in votingPower_
-                from scoresTotal in scoresTotal_
-                select crvPerDay * 14 * votingPower / scoresTotal;
-
-            var rewardPerDollarBribe_ =
-                from crvPrice in crvPrice_
-                from crvPerCvxPerRound in crvPerCvxPerRound_
-                select crvPerCvxPerRound / dollarPerVlCvx * crvPrice;
-
-            var epochOverviewsV1 = dataV1
-               .Epochs
-               .Map(epoch =>
-                {
-                    var totalAmountDollars = epoch.Bribes.Sum(bribe => bribe.AmountDollars);
-                    var totalAmountBribed = epoch.Bribed.Values.Sum();
-
-                    return new Db.Bribes.EpochOverview
-                    {
-                        Platform = epoch.Platform,
-                        Protocol = epoch.Protocol,
-                        Round = epoch.Round,
-                        Proposal = epoch.Proposal,
-                        VoteSource = "snapshot",
-                        End = epoch.End,
-                        TotalAmountDollars = totalAmountDollars,
-                        DollarPerVlAsset = totalAmountBribed > 0
-                            ? totalAmountDollars / totalAmountBribed
-                            : 0
-                    };
-                });
-
-            var epochOverviewsV2 = dataV2
-               .Epochs
-               .Map(epoch =>
-                {
-                    var totalAmountDollars = epoch.Bribes.Sum(bribe => bribe.AmountDollars);
-                    var totalAmountBribed = epoch.Bribed.Values.Sum();
-
-                    return new Db.Bribes.EpochOverview
-                    {
-                        Platform = epoch.Platform,
-                        Protocol = epoch.Protocol,
-                        Round = epoch.Round,
-                        Proposal = epoch.Proposal,
-                        VoteSource = epoch.VoteSource ?? "snapshot",
-                        End = epoch.End,
-                        TotalAmountDollars = totalAmountDollars,
-                        DollarPerVlAsset = totalAmountBribed > 0
-                            ? totalAmountDollars / totalAmountBribed
-                            : 0
-                    };
-                });
-
-            var epochOverviews = epochOverviewsV1
-               .Concat(epochOverviewsV2)
-               .ToList();
-
-            return
-                from rewardPerDollarBribe in rewardPerDollarBribe_
-                select new Db.Bribes.Dashboards.Overview
-                {
-                    Id = Db.Bribes.Dashboards.Overview.Votium,
-                    RewardPerDollarBribe = rewardPerDollarBribe,
-                    Epochs = epochOverviews
-                };
-        });
-
-    public static Func<
-        IWeb3,
-        Func<HttpClient>,
-        FxnData,
-        EitherAsync<Error, Db.Bribes.Dashboards.Overview>>
-    CreateOverviewFxn = fun((
+    public static EitherAsync<Error, Lst<Database.Dashboard>> CreateDashboards(
         IWeb3 web3,
         Func<HttpClient> httpFactory,
-        FxnData data) =>
+        Data data)
+    {
+        var overviewVotium_ = CreateOverviewVotium(web3, httpFactory, data.VotiumDataV1, data.VotiumDataV2).Map(x => (Database.Dashboard)x);
+        var overviewFxn_ = CreateOverviewFxn(web3, httpFactory, data.FxnData).Map(x => (Database.Dashboard)x);
+
+        return
+            from overviewVotium in overviewVotium_
+            from overviewFxn in overviewFxn_
+            select List(overviewVotium, overviewFxn);
+    }
+
+    public static EitherAsync<Error, Db.Bribes.Dashboards.Overview> CreateOverviewVotium(
+        IWeb3 web3,
+        Func<HttpClient> httpFactory,
+        VotiumDataV1 dataV1,
+        VotiumDataV2 dataV2)
+    {
+        var totalBribes = dataV2.LatestFinishedEpoch.Bribes.Sum(bribe => bribe.AmountDollars);
+        var totalBribed = dataV2.LatestFinishedEpoch.Bribed.Sum(bribed => bribed.Value);
+        var dollarPerVlCvx = totalBribes / totalBribed;
+
+        var crvPrice_ = PriceFunctions.GetPrice(httpFactory, Addresses.Curve.Token, Network.Ethereum, Some(web3));
+
+        var crvPerDay_ = Curve.GetRate(web3).DivideByDecimals(Convex.CurveDecimals).Map(x => x * 86400).ToEitherAsync();
+        var votingPower_ = Curve.GetVotingPower(web3, Addresses.Convex.VoterProxyCurve).ToEitherAsync();
+
+        var scoresTotal_ = dataV2.LatestFinishedEpoch.ScoresTotal > 0
+            ? RightAsync<Error, double>(dataV2.LatestFinishedEpoch.ScoresTotal)
+            : LeftAsync<Error, double>(Error.New("Total scores is zero"));
+
+        // https://docs.google.com/spreadsheets/d/1SCO33fU-4EglqD9h191c5z3curC3SqJP-yshA1MjVqE/edit#gid=0
+        var crvPerCvxPerRound_ =
+            from crvPerDay in crvPerDay_
+            from votingPower in votingPower_
+            from scoresTotal in scoresTotal_
+            select crvPerDay * 14 * votingPower / scoresTotal;
+
+        var rewardPerDollarBribe_ =
+            from crvPrice in crvPrice_
+            from crvPerCvxPerRound in crvPerCvxPerRound_
+            select crvPerCvxPerRound / dollarPerVlCvx * crvPrice;
+
+        var epochOverviewsV1 = dataV1
+           .Epochs
+           .Map(epoch =>
+            {
+                var totalAmountDollars = epoch.Bribes.Sum(bribe => bribe.AmountDollars);
+                var totalAmountBribed = epoch.Bribed.Values.Sum();
+
+                return new Db.Bribes.EpochOverview
+                {
+                    Platform = epoch.Platform,
+                    Protocol = epoch.Protocol,
+                    Round = epoch.Round,
+                    Proposal = epoch.Proposal,
+                    VoteSource = "snapshot",
+                    End = epoch.End,
+                    TotalAmountDollars = totalAmountDollars,
+                    DollarPerVlAsset = totalAmountBribed > 0
+                        ? totalAmountDollars / totalAmountBribed
+                        : 0
+                };
+            });
+
+        var epochOverviewsV2 = dataV2.Epochs.Map(CreateEpochOverview);
+        var epochOverviews = epochOverviewsV1.Concat(epochOverviewsV2).ToList();
+
+        return
+            from rewardPerDollarBribe in rewardPerDollarBribe_
+            select new Db.Bribes.Dashboards.Overview
+            {
+                Id = Db.Bribes.Dashboards.Overview.Votium,
+                RewardPerDollarBribe = rewardPerDollarBribe,
+                Epochs = epochOverviews
+            };
+    }
+
+    public static EitherAsync<Error, Db.Bribes.Dashboards.Overview> CreateOverviewFxn(
+        IWeb3 web3,
+        Func<HttpClient> httpFactory,
+        FxnData data)
     {
         var totalBribes = data.LatestFinishedEpoch.Bribes.Sum(bribe => bribe.AmountDollars);
         var totalBribed = data.LatestFinishedEpoch.Bribed.Sum(bribed => bribed.Value);
@@ -205,28 +143,7 @@ public static class DashboardFactory
             from fxnPerCvxPerRound in fxnPerCvxPerRound_
             select fxnPerCvxPerRound / dollarPerVlCvx * fxnPrice;
 
-        var epochOverviews = data
-           .Epochs
-           .Map(epoch =>
-            {
-                var totalAmountDollars = epoch.Bribes.Sum(bribe => bribe.AmountDollars);
-                var totalAmountBribed = epoch.Bribed.Values.Sum();
-
-                return new Db.Bribes.EpochOverview
-                {
-                    Platform = epoch.Platform,
-                    Protocol = epoch.Protocol,
-                    Round = epoch.Round,
-                    Proposal = epoch.Proposal,
-                    VoteSource = epoch.VoteSource ?? "snapshot",
-                    End = epoch.End,
-                    TotalAmountDollars = totalAmountDollars,
-                    DollarPerVlAsset = totalAmountBribed > 0
-                        ? totalAmountDollars / totalAmountBribed
-                        : 0
-                };
-            })
-           .ToList();
+        var epochOverviews = data.Epochs.Map(CreateEpochOverview).ToList();
 
         return
             from rewardPerDollarBribe in rewardPerDollarBribe_
@@ -236,5 +153,25 @@ public static class DashboardFactory
                 RewardPerDollarBribe = rewardPerDollarBribe,
                 Epochs = epochOverviews
             };
-    });
+    }
+
+    private static Db.Bribes.EpochOverview CreateEpochOverview(Db.Bribes.EpochV2 epoch)
+    {
+        var totalAmountDollars = epoch.Bribes.Sum(bribe => bribe.AmountDollars);
+        var totalAmountBribed = epoch.Bribed.Values.Sum();
+
+        return new Db.Bribes.EpochOverview
+        {
+            Platform = epoch.Platform,
+            Protocol = epoch.Protocol,
+            Round = epoch.Round,
+            Proposal = epoch.Proposal,
+            VoteSource = epoch.VoteSource ?? "snapshot",
+            End = epoch.End,
+            TotalAmountDollars = totalAmountDollars,
+            DollarPerVlAsset = totalAmountBribed > 0
+                ? totalAmountDollars / totalAmountBribed
+                : 0
+        };
+    }
 }

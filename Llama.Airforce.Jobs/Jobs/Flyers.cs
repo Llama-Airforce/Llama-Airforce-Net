@@ -3,26 +3,18 @@ using Llama.Airforce.Database.Contexts;
 using Llama.Airforce.Jobs.Factories;
 using Microsoft.Extensions.Logging;
 using Nethereum.Web3;
-using static LanguageExt.Prelude;
 using Db = Llama.Airforce.Database.Models;
 
 namespace Llama.Airforce.Jobs.Jobs;
 
 public class Flyers
 {
-    public static Func<
-            ILogger,
-            DashboardContext,
-            IWeb3,
-            Func<HttpClient>,
-            Lst<Db.Bribes.EpochV2>,
-            Task>
-        UpdateFlyerConvex = fun((
-            ILogger logger,
-            DashboardContext context,
-            IWeb3 web3,
-            Func<HttpClient> httpFactory,
-            Lst<Db.Bribes.EpochV2> latestFinishedEpoch) =>
+    public static Task UpdateFlyerConvex(
+        ILogger logger,
+        DashboardContext context,
+        IWeb3 web3,
+        Func<HttpClient> httpFactory,
+        Lst<Db.Bribes.EpochV2> latestFinishedEpoch) =>
         FlyerFactory
             .CreateFlyerConvex(web3, httpFactory, latestFinishedEpoch)
             .MatchAsync(
@@ -37,5 +29,5 @@ public class Flyers
                 {
                     logger.LogError($"Failed to update Convex flyer: {ex}");
                     return Unit.Default;
-                }));
+                });
 }
