@@ -1,6 +1,5 @@
 ﻿using LanguageExt;
 using Llama.Airforce.Database.Contexts;
-using Llama.Airforce.Database.Models.Bribes;
 using Llama.Airforce.Domain.Models;
 using Llama.Airforce.Jobs.Extensions;
 using Llama.Airforce.Jobs.Factories;
@@ -11,7 +10,6 @@ using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Nethereum.Web3;
 using static LanguageExt.Prelude;
-using EpochV2 = Llama.Airforce.Database.Models.Bribes.EpochV2;
 
 // Build configuration
 var configuration = new ConfigurationBuilder()
