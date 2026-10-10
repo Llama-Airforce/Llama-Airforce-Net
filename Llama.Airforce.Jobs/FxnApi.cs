@@ -50,7 +50,7 @@ public static class FxnApi
                         kv) =>
                     {
                         var gaugeId = Address.Of(kv.Gauge).ValueUnsafe(); // Votium bribe gauge
-                        var shortName = kv.Name; // Snapshot choice
+                        var shortName = kv.Name; // Gauge display name.
 
                         return acc.AddOrUpdate(gaugeId, _ => shortName, shortName);
                     }));

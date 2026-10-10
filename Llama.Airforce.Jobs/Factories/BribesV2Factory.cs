@@ -12,7 +12,6 @@ using Nethereum.Web3;
 using static LanguageExt.Prelude;
 using Db = Llama.Airforce.Database.Models;
 using Dom = Llama.Airforce.Domain.Models;
-using Snap = Llama.Airforce.Jobs.Snapshots.Models;
 
 namespace Llama.Airforce.Jobs.Factories;
 
@@ -50,11 +49,7 @@ public static class BribesV2Factory
     }
 
     public record BribesFunctions(
-        Func<EitherAsync<Error, Map<string, (int, string)>>> GetProposalIds,
-        Func<string, EitherAsync<Error, Snap.Proposal>> GetProposal,
         Func<EitherAsync<Error, Lst<Dom.EpochV2>>> GetEpochs,
-        Func<string, EitherAsync<Error, Lst<Snap.Vote>>> GetVotes,
-        Func<Lst<Address>, BigInteger, EitherAsync<Error, Map<Address, double>>> GetScores,
         Func<EitherAsync<Error, Map<string, string>>> GetGauges);
 
     public static BribesFunctions GetBribesFunctions(
@@ -64,19 +59,11 @@ public static class BribesV2Factory
         protocol switch
         {
             Protocol.ConvexCrv => new(
-                Snapshots.Convex.GetProposalIdsV2.Par(httpFactory),
-                Snapshots.Snapshot.GetProposal.Par(httpFactory),
                 Subgraphs.Votium.GetEpochsV2.Par(httpFactory).Par(graphApiKey).Par(Protocol.ConvexCrv),
-                Snapshots.Snapshot.GetVotes.Par(httpFactory),
-                Snapshots.Convex.GetScores.Par(httpFactory),
                 CurveApi.GetGaugesGaugeToShortName.Par(httpFactory)),
 
             Protocol.ConvexFxn => new(
-                Snapshots.Convex.GetProposalIdsFxn.Par(httpFactory),
-                Snapshots.Snapshot.GetProposal.Par(httpFactory),
                 Subgraphs.Votium.GetEpochsV2.Par(httpFactory).Par(graphApiKey).Par(Protocol.ConvexFxn),
-                Snapshots.Snapshot.GetVotes.Par(httpFactory),
-                Snapshots.Convex.GetScores.Par(httpFactory),
                 FxnApi.GetGauges.Par(httpFactory)),
 
             _ => throw new Exception($"Unsupported protocol")
@@ -115,7 +102,6 @@ public static class BribesV2Factory
                 select ProcessEpochs(
                     logger,
                     web3,
-                    bribeFunctions,
                     options,
                     epochs,
                     gauges,
@@ -127,15 +113,11 @@ public static class BribesV2Factory
 
     private record EpochToProcess(
         Dom.EpochV2 Epoch,
-        int Index)
-    {
-        public int PublicRound => Index + 1;
-    }
+        int Index);
 
     private static EitherAsync<Error, Lst<Db.Bribes.EpochV2>> ProcessEpochs(
         ILogger logger,
         IWeb3 web3,
-        BribesFunctions bribeFunctions,
         OptionsGetBribes options,
         Lst<Dom.EpochV2> epochs,
         Map<string, string> gauges,
@@ -150,30 +132,23 @@ public static class BribesV2Factory
             : toList(epochs
                .Select((epoch, i) => new EpochToProcess(epoch, i + indexOffset)));
 
-        var proposalIds_ = RightAsync<Error, Map<string, (int Index, string Title)>>(Map<string, (int Index, string Title)>());
-
-        return proposalIds_
-           .Bind(proposalIds => epochsToProcess
-               .Map(epoch => ProcessEpoch(
-                    logger,
-                    web3,
-                    new OptionsProcessEpoch(
-                        bribeFunctions,
-                        options.Protocol,
-                        proposalIds,
-                        epoch.Epoch,
-                        gauges,
-                        epoch.Index,
-                        options.OnchainVoting),
-                    getPrice))
-               .SequenceSerial()
-               .Map(toList));
+        return epochsToProcess
+           .Map(epoch => ProcessEpoch(
+                logger,
+                web3,
+                new OptionsProcessEpoch(
+                    options.Protocol,
+                    epoch.Epoch,
+                    gauges,
+                    epoch.Index,
+                    options.OnchainVoting),
+                getPrice))
+           .SequenceSerial()
+           .Map(toList);
     }
 
     public record OptionsProcessEpoch(
-        BribesFunctions BribesFunctions,
         Protocol Protocol,
-        Map<string, (int Index, string Title)> ProposalIds,
         Dom.EpochV2 Epoch,
         Map<string, string> Gauges,
         int Index,
@@ -263,7 +238,6 @@ public static class BribesV2Factory
                     ProcessBribe,
                     logger,
                     web3,
-                    new ProcessBribeOptions(),
                     options.Gauges,
                     par(getPrice, proposalEnd)))
                .SequenceSerial()
@@ -364,12 +338,9 @@ public static class BribesV2Factory
         return RightAsync<Error, ConvexOnchainGaugeVoting.ProposalOutput>(proposal);
     }
 
-    public record ProcessBribeOptions(List<string>? SnapshotChoices = null);
-
     public static Func<
             ILogger,
             IWeb3,
-            ProcessBribeOptions,
             Map<string, string>,
             Func<Address, string, EitherAsync<Error, double>>,
             Dom.BribeV2,
@@ -377,7 +348,6 @@ public static class BribesV2Factory
         ProcessBribe = fun((
             ILogger logger,
             IWeb3 web3,
-            ProcessBribeOptions options,
             Map<string, string> gauges,
             Func<Address, string, EitherAsync<Error, double>> getPrice,
             Dom.BribeV2 bribe) =>
@@ -399,34 +369,8 @@ public static class BribesV2Factory
                     })
                .ToAsync();
 
-            var choice_ = gauge_.Bind(gauge =>
-            {
-                if (string.IsNullOrWhiteSpace(gauge))
-                    return EitherAsync<Error, int>.Right(-1);
-
-                var index = options.SnapshotChoices is null
-                    ? 0
-                    : options.SnapshotChoices.FindIndex(gauge.StartsWith);
-
-                if (index == -1)
-                    logger.LogWarning($"Choice index was not found for gauge '{gauge}'");
-
-                return EitherAsync<Error, int>.Right(index);
-
-                /*
-                 * I no longer want to bubble up the error and fail early, because sometimes a smol $1k bribe
-                 * can cause an additional $150k or more in bribes to go unaccounted for. Yes, it works in that people
-                 * will notify me sooner, but it also prevents important users from accessing up-to-date data they require,
-                 * data that has nothing to do with the problematic bribe. Instead, keep an eye on the logs, and the code
-                 * will continue to function properly for the non-problematic cases. Therefore, return -1 and filter these out
-                 * later with .Where(bribe => bribe.Choice != -1)). If I'm unable to fix issues in time before the round ends,
-                 * at least some major, important bribes will still be recorded.
-                 *
-                 * return index == -1
-                 *   ? EitherAsync<Error, int>.Left($"Choice index was not found for gauge '{gauge}'")
-                 *   : EitherAsync<Error, int>.Right(index);
-                 */
-            });
+            // Unknown gauges are excluded later without failing the entire epoch.
+            var choice_ = gauge_.Map(gauge => string.IsNullOrWhiteSpace(gauge) ? -1 : 0);
 
             // Convert any price error to $0, but log it. Then convert to EitherAsync for the applicative below.
             var price_ = token_.Bind(token => getPrice(tokenAddress, token))

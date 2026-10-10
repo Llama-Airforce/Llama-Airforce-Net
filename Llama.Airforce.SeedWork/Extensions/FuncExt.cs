@@ -9,10 +9,4 @@ public static class FuncExt
 
     public static Func<T2, T3, R> Par<T1, T2, T3, R>(this Func<T1, T2, T3, R> func, T1 t1)
         => (t2, t3) => func(t1, t2, t3);
-
-    public static Func<T2, T3, T4, R> Par<T1, T2, T3, T4, R>(this Func<T1, T2, T3, T4, R> func, T1 t1)
-        => (t2, t3, t4) => func(t1, t2, t3, t4);
-
-    public static Func<T2, T3, T4, T5, R> Par<T1, T2, T3, T4, T5, R>(this Func<T1, T2, T3, T4, T5, R> func, T1 t1)
-        => (t2, t3, t4, t5) => func(t1, t2, t3, t4, t5);
 }

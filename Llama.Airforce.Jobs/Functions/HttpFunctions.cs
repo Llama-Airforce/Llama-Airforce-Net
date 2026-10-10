@@ -8,7 +8,7 @@ namespace Llama.Airforce.Jobs.Functions;
 public static class HttpFunctions
 {
     /// <summary>
-    /// Returns general json data from Snapshot
+    /// Returns data from an HTTP POST request.
     /// </summary>
     public static Func<
             Func<HttpClient>,
@@ -37,7 +37,7 @@ public static class HttpFunctions
         .ToEither());
 
     /// <summary>
-    /// Returns general json data from Snapshot
+    /// Returns data from an HTTP GET request.
     /// </summary>
     public static Func<
             Func<HttpClient>,
