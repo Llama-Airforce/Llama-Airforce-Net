@@ -4,7 +4,6 @@ using Llama.Airforce.Jobs.Contracts;
 using Llama.Airforce.Jobs.Extensions;
 using Llama.Airforce.Jobs.Functions;
 using Llama.Airforce.SeedWork.Extensions;
-using Microsoft.Extensions.Logging;
 using Nethereum.Web3;
 using static LanguageExt.Prelude;
 using Db = Llama.Airforce.Database.Models;
@@ -41,20 +40,17 @@ public static class DashboardFactory
     }
 
     public static Func<
-            ILogger,
             IWeb3,
             Func<HttpClient>,
             Data,
             EitherAsync<Error, Lst<Database.Dashboard>>>
         CreateDashboards = fun((
-            ILogger logger,
             IWeb3 web3,
             Func<HttpClient> httpFactory,
             Data data) =>
         {
             var overviewVotium_ =
                 CreateOverviewVotium(
-                    logger,
                     web3,
                     httpFactory,
                     data.VotiumDataV1,
@@ -63,7 +59,6 @@ public static class DashboardFactory
 
             var overviewFxn_ =
                 CreateOverviewFxn(
-                        logger,
                         web3,
                         httpFactory,
                         data.FxnData)
@@ -76,14 +71,12 @@ public static class DashboardFactory
         });
 
     public static Func<
-            ILogger,
             IWeb3,
             Func<HttpClient>,
             VotiumDataV1,
             VotiumDataV2,
             EitherAsync<Error, Db.Bribes.Dashboards.Overview>>
         CreateOverviewVotium = fun((
-            ILogger logger,
             IWeb3 web3,
             Func<HttpClient> httpFactory,
             VotiumDataV1 dataV1,
@@ -173,13 +166,11 @@ public static class DashboardFactory
         });
 
     public static Func<
-        ILogger,
         IWeb3,
         Func<HttpClient>,
         FxnData,
         EitherAsync<Error, Db.Bribes.Dashboards.Overview>>
     CreateOverviewFxn = fun((
-        ILogger logger,
         IWeb3 web3,
         Func<HttpClient> httpFactory,
         FxnData data) =>

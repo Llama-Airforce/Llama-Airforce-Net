@@ -5,7 +5,6 @@ using LanguageExt;
 using Llama.Airforce.Database.Models.Bribes;
 using Llama.Airforce.Jobs.Factories;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Nethereum.Web3;
 using NUnit.Framework;
 
@@ -31,7 +30,6 @@ public class DashboardFactoryTests
         var alchemy = Configuration["ALCHEMY"];
         var web3 = new Web3(alchemy);
         HttpClient http() => new();
-        var logger = new LoggerFactory().CreateLogger("test");
         var epochs = Lst<EpochV2>.Empty;
         var latestFinishedEpoch = new EpochV2
         {
@@ -48,7 +46,7 @@ public class DashboardFactoryTests
             latestFinishedEpoch);
 
         // Act
-        var overview = await DashboardFactory.CreateOverviewVotium(logger, web3, http, dataV1, dataV2)
+        var overview = await DashboardFactory.CreateOverviewVotium(web3, http, dataV1, dataV2)
             .MatchAsync(x => x, _ => throw new System.Exception());
 
         // Assert
@@ -62,7 +60,6 @@ public class DashboardFactoryTests
         var alchemy = Configuration["ALCHEMY"];
         var web3 = new Web3(alchemy);
         HttpClient http() => new();
-        var logger = new LoggerFactory().CreateLogger("test");
         var epochs = Lst<EpochV2>.Empty;
         var latestFinishedEpoch = new EpochV2
         {
@@ -79,7 +76,7 @@ public class DashboardFactoryTests
             latestFinishedEpoch);
 
         // Act
-        var overview = await DashboardFactory.CreateOverviewVotium(logger, web3, http, dataV1, dataV2);
+        var overview = await DashboardFactory.CreateOverviewVotium(web3, http, dataV1, dataV2);
 
         // Assert
         Assert.IsTrue(overview.IsLeft && overview.LeftToList().First().Message == "Total scores is zero");

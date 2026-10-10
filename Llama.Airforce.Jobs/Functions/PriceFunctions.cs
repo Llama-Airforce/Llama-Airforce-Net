@@ -47,7 +47,7 @@ public static class PriceFunctions
                 w => GetCurveV1Price(httpFactory, w, Addresses.ERC20.sdFXS, Addresses.ERC20.FXS, true).ToOption(),
                 () => None),
             "TXJP" => web3.Match(
-                w => GetTXJPPrice(httpFactory, w, Addresses.ERC20.TXJP, None).ToOption(),
+                w => GetTXJPPrice(httpFactory, w, None).ToOption(),
                 () => None),
             _ => None
         });
@@ -214,13 +214,11 @@ public static class PriceFunctions
     public static Func<
             Func<HttpClient>,
             IWeb3,
-            Address,
             Option<Address>,
             EitherAsync<Error, double>>
         GetTXJPPrice = fun((
             Func<HttpClient> httpFactory,
             IWeb3 web3,
-            Address token,
             Option<Address> tokenOther) =>
         {
             var priceOther_ = GetPriceExt(

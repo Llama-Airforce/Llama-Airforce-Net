@@ -23,7 +23,7 @@ public class Dashboards
             DashboardContext context,
             DashboardFactory.Data data) =>
         DashboardFactory
-            .CreateDashboards(logger, web3, httpFactory, data)
+            .CreateDashboards(web3, httpFactory, data)
             .MatchAsync(
                 RightAsync: async dashboards =>
                 {

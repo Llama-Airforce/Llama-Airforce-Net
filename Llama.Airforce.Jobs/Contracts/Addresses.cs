@@ -11,7 +11,6 @@ public static class Addresses
         public static Address eCFX = Address.Of("0xa1f82e14bc09a1b42710df1a8a999b62f294e592");
         public static Address sdFXS = Address.Of("0x402f878bdd1f5c66fdaf0fababcf74741b68ac36");
         public static Address FXS = Address.Of("0x3432b6a60d23ca0dfca7761b7ab56459d9c964d0");
-        public static Address TXJP = Address.Of("0x961dd84059505d59f82ce4fb87d3c09bec65301d");
     }
 
     public static class Curve

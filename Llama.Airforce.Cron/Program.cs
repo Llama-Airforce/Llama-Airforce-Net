@@ -45,7 +45,6 @@ var serviceProvider = new ServiceCollection()
    // Disable automatic HTTP client logging.
    .RemoveAll<IHttpMessageHandlerBuilderFilter>()
    .AddContexts(configuration)
-   .AddSingleton<IWeb3>(web3ETH)
    .Configure<LoggerFilterOptions>(options => options.MinLevel = LogLevel.Information)
    .BuildServiceProvider();
 

@@ -60,7 +60,7 @@ public static class BribesV2Factory
         {
             Protocol.ConvexCrv => new(
                 Subgraphs.Votium.GetEpochsV2.Par(httpFactory).Par(graphApiKey).Par(Protocol.ConvexCrv),
-                CurveApi.GetGaugesGaugeToShortName.Par(httpFactory)),
+                CurveApi.GetGauges.Par(httpFactory)),
 
             Protocol.ConvexFxn => new(
                 Subgraphs.Votium.GetEpochsV2.Par(httpFactory).Par(graphApiKey).Par(Protocol.ConvexFxn),

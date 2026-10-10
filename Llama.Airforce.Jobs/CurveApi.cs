@@ -28,15 +28,11 @@ public static class CurveApi
         public string ShortName { get; set; }
     }
 
-    public record Gauge(
-        Address Address,
-        string ShortName);
-
     public const string CURVE_API_URL = "https://api.curve.finance/api/getAllGauges";
 
     public static Func<
             Func<HttpClient>,
-            EitherAsync<Error, Map<Address, Gauge>>>
+            EitherAsync<Error, Map<string, string>>>
         GetGauges = fun((
             Func<HttpClient> httpFactory) =>
         {
@@ -46,35 +42,14 @@ public static class CurveApi
                     httpFactory,
                     CURVE_API_URL)
                .MapTry(JsonConvert.DeserializeObject<RequestGauges>)
-               .MapTry(x => x.Data.Aggregate(Map<Address, Gauge>(), (
+               .MapTry(x => x.Data.Aggregate(Map<string, string>(), (
                         acc,
                         kv) =>
                 {
                     var address = Address.Of(string.IsNullOrEmpty(kv.Value.RootGauge) ? kv.Value.Gauge : kv.Value.RootGauge).ValueUnsafe();
-                    var gauge = new Gauge(address, kv.Value.ShortName);
+                    var shortName = kv.Value.ShortName;
 
-                    return acc.AddOrUpdate(address, _ => gauge, gauge);
+                    return acc.AddOrUpdate(address, _ => shortName, shortName);
                 }));
-        });
-
-    /// <summary>
-    /// Maps the Map<Address, Gauge> to a Map<string, string>
-    /// </summary>
-    public static Func<
-            Func<HttpClient>,
-            EitherAsync<Error, Map<string, string>>>
-        GetGaugesGaugeToShortName = fun((
-            Func<HttpClient> httpFactory) =>
-        {
-            return GetGauges(httpFactory)
-               .Map(gauges =>
-                {
-                    var newMap = Map<string, string>();
-
-                    foreach (var (address, gauge) in gauges)
-                        newMap = newMap.AddOrUpdate(address, _ => gauge.ShortName, gauge.ShortName);
-
-                    return newMap;
-                });
         });
 }
