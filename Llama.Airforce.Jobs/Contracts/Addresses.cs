@@ -49,6 +49,12 @@ public static class Addresses
         public static Address FxGaugeRegistry = Address.Of("0xC2F99261d84D1665Df7e50F46813497A737AfB20");
     }
 
+    public static class Votium
+    {
+        public static Address CurveOptOutRegistry = Address.Of("0x5A5c248B39702E1A35bB854858B4Ae729D9c4405");
+        public static Address FxnOptOutRegistry = Address.Of("0x42dC5034C0699e98e2e5c0106B913c42810a618e");
+    }
+
     public static class CvxCrv
     {
         public static Address Token = Address.Of("0x62B9c7356A2Dc64a1969e19C23e4f579F9810Aa7");

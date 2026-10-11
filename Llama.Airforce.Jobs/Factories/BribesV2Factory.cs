@@ -12,6 +12,7 @@ using Nethereum.Web3;
 using static LanguageExt.Prelude;
 using Db = Llama.Airforce.Database.Models;
 using Dom = Llama.Airforce.Domain.Models;
+using SmartContractCustomErrorRevertException = Nethereum.Contracts.SmartContractCustomErrorRevertException;
 
 namespace Llama.Airforce.Jobs.Factories;
 
@@ -119,6 +120,13 @@ public static class BribesV2Factory
             _ => throw new Exception($"Unsupported protocol")
         });
 
+        var optOutRegistry = options.Protocol switch
+        {
+            Protocol.ConvexCrv => Addresses.Votium.CurveOptOutRegistry,
+            Protocol.ConvexFxn => Addresses.Votium.FxnOptOutRegistry,
+            _ => throw new Exception($"Unsupported protocol")
+        };
+
         var proposalId = options.ToProposalId(publicRound);
         var proposal_ =
             from platform in platform_
@@ -137,7 +145,12 @@ public static class BribesV2Factory
            .Map(bs => bs.Where(bribe => bribe.Choice != -1))
            .Map(toList)
         );
-        var bribed_ = platform_.Bind(platform => bribes_.Bind(bribes => GetBribedPools(web3, platform, proposalId, bribes)));
+        var bribed_ =
+            from platform in platform_
+            from bribes in bribes_
+            from proposal in proposal_
+            from bribed in GetBribedPools(logger, web3, platform, optOutRegistry, proposalId, proposal.Epoch, bribes)
+            select bribed;
 
         var scoresTotal_ =
             from platform in platform_
@@ -187,15 +200,46 @@ public static class BribesV2Factory
     }
 
     private static EitherAsync<Error, Map<string, double>> GetBribedPools(
+        ILogger logger,
         IWeb3 web3,
         Address platform,
+        Address optOutRegistry,
         int proposalId,
+        BigInteger votingEpoch,
         Lst<Db.Bribes.BribeV2> bribes) =>
         bribes
            .DistinctBy(bribe => bribe.Gauge)
-           .Map(async bribe => (
-               bribe.Pool,
-               Score: await ConvexOnchainGaugeVoting.GaugeTotal(web3, platform, proposalId, bribe.Gauge).Map(x => x.DivideByDecimals(18))))
+           .Map(async bribe =>
+            {
+                var gross = await ConvexOnchainGaugeVoting.GaugeTotal(web3, platform, proposalId, bribe.Gauge);
+                BigInteger withheld;
+                try
+                {
+                    withheld = await Votium.WithheldWeightAtEpoch(web3, optOutRegistry, bribe.Gauge, votingEpoch);
+                }
+                catch (SmartContractCustomErrorRevertException ex)
+                {
+                    logger.LogError(ex,
+                        "Gauge opt-out lookup reverted for {Gauge}, registry {Registry}, proposal {ProposalId}, " +
+                        "vlCVX epoch {VotingEpoch}. Revert data: {RevertData}",
+                        bribe.Gauge, optOutRegistry.Value, proposalId, votingEpoch, ex.ExceptionEncodedData);
+                    throw;
+                }
+
+                if (withheld > gross)
+                    throw new InvalidOperationException(
+                        $"Opt-out weight {withheld} exceeds gauge weight {gross} for gauge {bribe.Gauge}, " +
+                        $"registry {optOutRegistry.Value}, proposal {proposalId}, vlCVX epoch {votingEpoch}");
+
+                var net = gross - withheld;
+                if (withheld > 0)
+                    logger.LogInformation(
+                        "Gauge opt-out deduction for {Gauge}, registry {Registry}: " +
+                        "raw weight gross {Gross}, withheld {Withheld}, net {Net}",
+                        bribe.Gauge, optOutRegistry.Value, gross.DivideByDecimals(18), withheld.DivideByDecimals(18), net);
+
+                return (bribe.Pool, Score: net.DivideByDecimals(18));
+            })
            .SequenceSerial()
            .Map(gauges => gauges
                .Where(gauge => gauge.Score > 0)
